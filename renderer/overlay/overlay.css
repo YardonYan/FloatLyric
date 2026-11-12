@@ -1,0 +1,245 @@
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.stage {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  -webkit-app-region: drag;
+}
+
+/* The pane is a lit dark, not a hole: a top-weighted radial lift over a
+   vertical fall-off, so it reads as an object catching light rather than
+   a black rectangle punched in the desktop. */
+.pane {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-l);
+  overflow: hidden;
+}
+
+/* Background lives on its own layer: putting opacity on .pane would fade the
+   lyric text along with it, which is the opposite of what "底色浓度" means.
+   Edge light and sheen ride this layer so 浓度 0 leaves bare text, no outline. */
+.pane-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--pane-bg);
+  opacity: var(--pane-opacity, 1);
+  transition: opacity .28s ease;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .07),
+    inset 0 0 0 1px var(--pane-edge, rgba(255, 255, 255, .05));
+}
+
+.sheen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--pane-opacity, 1);
+  transition: opacity .28s ease;
+  background:
+    radial-gradient(130% 90% at 50% -25%, var(--sheen, rgba(255, 255, 255, .10)), transparent 62%);
+}
+
+/* Soft pool behind the text, scaled by 底色浓度: at 0 the lyric is bare type
+   with no layer at all; raising 浓度 brings the pool back with the pane. */
+.scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(58% 66% at 50% 50%, var(--scrim, rgba(0, 0, 0, .3)), transparent 78%);
+}
+
+.lyric {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .18em;
+  padding: 12px 18px 10px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .22em;
+  max-width: 100%;
+}
+
+.line {
+  font-size: calc(var(--fs) * var(--fit, 1));
+  font-weight: var(--fw, 600);
+  line-height: 1.34;
+  color: var(--lyric);
+  letter-spacing: .012em;
+  font-feature-settings: "palt" 1, "halt" 1;
+  text-wrap: balance;
+  white-space: nowrap;
+  max-width: 100%;
+  text-shadow: var(--halo);
+  transition: color .18s linear;
+}
+
+.line.enter { animation: lineIn var(--dur, 420ms) cubic-bezier(.22, .68, .28, 1) both; }
+
+@keyframes lineIn {
+  from { opacity: 0; transform: translate3d(0, .34em, 0); filter: blur(3px); }
+  to   { opacity: 1; transform: none; filter: blur(0); }
+}
+
+.tr {
+  font-size: calc(var(--fs) * var(--tr-scale, .52) * var(--fit, 1));
+  font-weight: 450;
+  line-height: 1.4;
+  color: var(--lyric-dim);
+  letter-spacing: .02em;
+  font-feature-settings: "palt" 1, "halt" 1;
+  white-space: nowrap;
+  max-width: 100%;
+  text-shadow: var(--halo-soft);
+}
+
+.tr:empty { display: none; }
+.tr.enter { animation: lineIn var(--dur, 420ms) cubic-bezier(.22, .68, .28, 1) both; }
+
+.ctx {
+  font-size: calc(var(--fs) * .46 * var(--fit, 1));
+  font-weight: 450;
+  line-height: 1.35;
+  color: var(--lyric-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 92%;
+  text-shadow: var(--halo-soft);
+}
+
+.ctx:empty { display: none; }
+body:not(.show-ctx) .ctx { display: none; }
+
+.idle {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: .55em;
+  font-size: calc(var(--fs) * .44);
+  font-weight: 450;
+  letter-spacing: .06em;
+  color: var(--lyric-faint);
+  text-shadow: var(--halo-soft);
+  pointer-events: none;
+}
+
+body.is-idle .idle { display: flex; }
+body.is-idle .lyric { display: none; }
+
+.idle-dot {
+  width: .42em;
+  height: .42em;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .5;
+  animation: breathe 2.6s ease-in-out infinite;
+}
+
+@keyframes breathe { 0%, 100% { opacity: .22; } 50% { opacity: .6; } }
+
+/* Hover chrome lives in the pane's top padding band, never over the text. */
+.hud {
+  position: absolute;
+  top: 7px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 99px;
+  background: var(--hud-bg, rgba(18, 20, 26, .58));
+  box-shadow: inset 0 0 0 1px var(--hud-edge, rgba(255, 255, 255, .07));
+  opacity: 0;
+  transform: translate3d(0, -4px, 0);
+  transition: opacity .18s ease, transform .18s ease;
+  -webkit-app-region: no-drag;
+  backdrop-filter: blur(9px);
+}
+
+.pane:hover .hud, .hud:focus-within { opacity: 1; transform: none; }
+body.is-locked .hud { opacity: 0; pointer-events: none; }
+
+.hud-btn {
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--hud-ink, rgba(238, 241, 246, .78));
+  transition: background .14s ease, color .14s ease;
+}
+
+.hud-btn:hover { background: var(--hud-hover, rgba(255, 255, 255, .13)); color: var(--hud-ink-hi, #fff); }
+.hud-btn.on { color: var(--accent); }
+.hud-sep { width: 1px; height: 14px; margin: 0 3px; background: var(--hud-edge, rgba(255, 255, 255, .12)); }
+
+.progress {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 6px;
+  height: 3px;
+  border-radius: 99px;
+  background: var(--prog-track, rgba(255, 255, 255, .10));
+  overflow: hidden;
+}
+
+.progress i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 99px;
+  background: var(--prog-fill, rgba(255, 255, 255, .38));
+}
+
+body:not(.show-progress) .progress { display: none; }
+
+.grip {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  -webkit-app-region: no-drag;
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+
+.grip::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 7px;
+  height: 7px;
+  border-right: 2px solid var(--hud-ink, rgba(255, 255, 255, .45));
+  border-bottom: 2px solid var(--hud-ink, rgba(255, 255, 255, .45));
+  border-radius: 0 0 3px 0;
+}
+
+.pane:hover .grip { opacity: .8; }
+body.is-locked .grip { display: none; }
+
+body.is-picking .pane { opacity: 1; }

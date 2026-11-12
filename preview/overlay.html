@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>浮词 · overlay 预览台</title>
+<link rel="stylesheet" href="../renderer/shared/tokens.css">
+<link rel="stylesheet" href="../renderer/overlay/overlay.css">
+<style>
+  body { margin:0; background:#0b0d12; font-family:var(--sys); color:#e8ecf4; }
+  /* A deliberately busy, multi-hue "wallpaper" so contrast can be judged
+     across light and dark regions rather than on a flat backdrop. */
+  .wall {
+    position:relative; width:100%; height:560px; overflow:hidden;
+    background:
+      radial-gradient(60% 80% at 12% 18%, #f7d9a0 0%, transparent 55%),
+      radial-gradient(55% 70% at 82% 12%, #8fc7f5 0%, transparent 58%),
+      radial-gradient(70% 90% at 68% 88%, #2b3f7a 0%, transparent 60%),
+      radial-gradient(50% 60% at 28% 82%, #d98fa8 0%, transparent 55%),
+      linear-gradient(160deg, #4a5f8a, #22304d 45%, #161d2e);
+  }
+  .wall::after {
+    content:""; position:absolute; inset:0;
+    background:
+      repeating-linear-gradient(115deg, rgba(255,255,255,.05) 0 2px, transparent 2px 9px),
+      radial-gradient(40% 50% at 50% 45%, rgba(255,255,255,.18), transparent 70%);
+  }
+  .slot { position:absolute; left:50%; transform:translateX(-50%); bottom:60px; width:760px; height:150px; }
+  .slot .stage { padding:0; }
+  .dock { padding:16px 20px 26px; display:flex; flex-wrap:wrap; gap:16px 26px; align-items:flex-end; }
+  .f { display:flex; flex-direction:column; gap:5px; font-size:11.5px; color:#9aa4b6; }
+  .f input[type=range] { width:150px; }
+  .f input[type=color] { width:44px; height:26px; border:0; background:none; padding:0; }
+  .f b { color:#e8ecf4; font-variant-numeric:tabular-nums; font-weight:600; }
+  .sw { display:flex; gap:6px; }
+  .sw button { width:22px; height:22px; border-radius:50%; border:1px solid rgba(255,255,255,.25); cursor:pointer; }
+  .modes { display:flex; gap:6px; }
+  .modes button { padding:5px 10px; border-radius:6px; background:#232936; color:#cfd7e6; font-size:11.5px; cursor:pointer; border:1px solid #333b4b; }
+  .modes button.on { background:#3d5aa8; color:#fff; border-color:#4d6cc0; }
+</style>
+</head>
+<body>
+  <div class="wall">
+    <div class="slot">
+      <div class="stage" id="stage">
+        <div class="pane" id="pane">
+          <div class="pane-bg" aria-hidden="true"></div>
+          <div class="sheen" aria-hidden="true"></div>
+          <div class="scrim" aria-hidden="true"></div>
+          <div class="hud" id="hud">
+            <button class="hud-btn" id="btnPick" title="取色针"><svg viewBox="0 0 20 20" width="15" height="15"><path d="M13.2 2.6a2.3 2.3 0 0 1 3.3 3.3l-1.5 1.5-3.3-3.3 1.5-1.5Z" fill="currentColor"/><path d="M10.6 5.2 4.3 11.5c-.3.3-.5.7-.6 1.1l-.6 2.6c-.1.5.3.9.8.8l2.6-.6c.4-.1.8-.3 1.1-.6l6.3-6.3-3.3-3.3Z" fill="currentColor" opacity=".72"/></svg></button>
+            <button class="hud-btn" id="btnSmaller"><svg viewBox="0 0 20 20" width="15" height="15"><path d="M4 10h12" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+            <button class="hud-btn" id="btnBigger"><svg viewBox="0 0 20 20" width="15" height="15"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>
+            <span class="hud-sep"></span>
+            <button class="hud-btn" id="btnLock"><svg viewBox="0 0 20 20" width="15" height="15"><rect x="4.5" y="9" width="11" height="7.5" rx="2" fill="currentColor"/><path d="M7 9V6.8a3 3 0 0 1 6 0V9" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg></button>
+            <button class="hud-btn" id="btnPanel"><svg viewBox="0 0 20 20" width="15" height="15"><path d="M3.5 6h13M3.5 14h13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="8" cy="6" r="2.3" fill="currentColor"/><circle cx="13" cy="14" r="2.3" fill="currentColor"/></svg></button>
+          </div>
+          <div class="lyric" id="lyric">
+            <div class="ctx ctx-prev" id="ctxPrev"></div>
+            <div class="main">
+              <div class="line" id="line"></div>
+              <div class="tr" id="tr"></div>
+            </div>
+            <div class="ctx ctx-next" id="ctxNext"></div>
+          </div>
+          <div class="idle" id="idle"><span class="idle-dot"></span><span class="idle-text" id="idleText">等待网易云播放</span></div>
+          <div class="progress" id="progress"><i id="progressFill"></i></div>
+          <div class="grip" id="grip"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dock">
+    <div class="f"><span>字号 <b id="vFs">34</b></span><input type="range" id="rFs" min="14" max="96" value="34"></div>
+    <div class="f"><span>底色浓度 <b id="vBg">60%</b></span><input type="range" id="rBg" min="0" max="95" value="60"></div>
+    <div class="f"><span>深浅 <b id="vSh">0</b></span><input type="range" id="rSh" min="-100" max="100" value="0"></div>
+    <div class="f"><span>光晕 <b id="vGl">55%</b></span><input type="range" id="rGl" min="0" max="100" value="55"></div>
+    <div class="f"><span>取色</span><input type="color" id="rCol" value="#f2f4f8"></div>
+    <div class="f"><span>预设</span><div class="sw" id="sw"></div></div>
+    <div class="f"><span>模式</span><div class="modes">
+      <button id="mCtx">上下句</button><button id="mTr">翻译</button><button id="mProg">进度条</button><button id="mIdle">空闲态</button>
+    </div></div>
+    <div class="f"><span>进度 <b id="vPos">0s</b></span><input type="range" id="rPos" min="0" max="215" step="0.1" value="20"></div>
+  </div>
+
+<script src="../renderer/shared/color.js"></script>
+<script src="../renderer/shared/fonts.js"></script>
+<script>
+const LYRICS = { source:'netease', lines:[
+  {t:0.0,text:''},
+  {t:15.332,text:'There was something in the air',tr:'空气中弥漫着某种氛围'},
+  {t:21.245,text:'I knew that in that moment I would burn the world to keep you warm',tr:'那一刻我就知道 我愿燃尽全世界 来让你保持温暖'},
+  {t:29.305,text:'But my life won\'t let me stay',tr:'但我的生活不让我留下'},
+  {t:35.100,text:'我带着比身体重的行李 游入尼罗河底',tr:''},
+  {t:41.780,text:'我看到几个人站在一起 他们拿着剪刀摘走我的行李',tr:''},
+  {t:55.870,text:'经过几道闪电 看到一堆光圈 不确定是不是这里',tr:''},
+  {t:70.000,text:'短句中文字',tr:'short line'},
+  {t:90.000,text:'这是一句非常长的中文歌词用来测试自动缩放是否能够把整行完整地放进歌词栏里面而不溢出',tr:''},
+  {t:120.000,text:'故事的小黄花',tr:''},
+  {t:140.000,text:'从出生那年就飘着',tr:''},
+  {t:160.000,text:'童年的荡秋千',tr:''},
+  {t:180.000,text:'随记忆一直晃到现在',tr:''},
+  {t:200.000,text:'Re So So Si Do Si La',tr:''}
+]};
+
+const CFG = {
+  fontSize:34, fontWeight:600, fontFamily:'system', baseColor:'#F2F4F8', shade:0,
+  bgOpacity:0.6, glow:0.55, showTranslation:true, showContext:false,
+  translationScale:0.52, offsetMs:0, locked:false, showProgressBar:true
+};
+let STATE = { ok:true, playing:true, title:'Hong Kong (feat. 王菲季候风)', artist:'The Weeknd', duration:216, position:20, cover:'' };
+const H = {};
+window.fl = {
+  settings:{ get:async()=>CFG, set:async p=>{Object.assign(CFG,p);return CFG;} },
+  ncm:{ status:async()=>({phase:'connected'}), state:async()=>STATE, reconnect:async()=>{}, launch:async()=>{}, control:async()=>true },
+  lyrics:{ current:async()=>LYRICS, refetch:async()=>LYRICS, fromText:async()=>LYRICS },
+  pick:{ start:async()=>{}, commit:async()=>{}, cancel:async()=>{} },
+  overlay:{ bounds:async b=>Object.assign({x:0,y:0,width:760,height:190},b), toggle:async()=>true, show:async()=>{} },
+  panel:{ show:async()=>{}, hide:async()=>{} },
+  app:{ quit:async()=>{}, version:async()=>'1.0.0' },
+  shell:{ open:async()=>{} },
+  on:{ ncmState:cb=>H.state=cb, ncmStatus:cb=>H.status=cb, lyricsData:cb=>H.ly=cb, lyricsLoading:cb=>H.load=cb,
+       settings:cb=>H.cfg=cb, pickSample:cb=>H.ps=cb, pickPreview:cb=>H.pp=cb, pickStarted:cb=>H.pstart=cb, pickEnded:cb=>H.pend=cb }
+};
+</script>
+<script src="../renderer/overlay/overlay.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const push=()=>{ H.cfg && H.cfg(CFG); };
+$('rFs').oninput=e=>{CFG.fontSize=+e.target.value;$('vFs').textContent=e.target.value;push();};
+$('rBg').oninput=e=>{CFG.bgOpacity=+e.target.value/100;$('vBg').textContent=e.target.value+'%';push();};
+$('rSh').oninput=e=>{CFG.shade=+e.target.value;$('vSh').textContent=e.target.value;push();};
+$('rGl').oninput=e=>{CFG.glow=+e.target.value/100;$('vGl').textContent=e.target.value+'%';push();};
+$('rCol').oninput=e=>{CFG.baseColor=e.target.value;push();};
+$('rPos').oninput=e=>{STATE.position=+e.target.value;$('vPos').textContent=(+e.target.value).toFixed(1)+'s';H.state&&H.state(STATE);};
+for(const [id,key] of [['mCtx','showContext'],['mTr','showTranslation'],['mProg','showProgressBar']]){
+  $(id).classList.toggle('on',!!CFG[key]);
+  $(id).onclick=()=>{CFG[key]=!CFG[key];$(id).classList.toggle('on',CFG[key]);push();};
+}
+$('mIdle').onclick=()=>{ STATE.ok=!STATE.ok; $('mIdle').classList.toggle('on',!STATE.ok); H.state&&H.state(STATE); };
+const PRE=['#F2F4F8','#FFD9A0','#F6C6D0','#A8D8FF','#B8E6C8','#D6C6FF','#FFE066','#FF9E8A','#1A1D24','#2E4A7D'];
+for(const c of PRE){const b=document.createElement('button');b.style.background=c;b.title=c;b.onclick=()=>{CFG.baseColor=c;$('rCol').value=c;push();};$('sw').appendChild(b);}
+setInterval(()=>{ if(STATE.ok&&STATE.playing){ STATE.position=(STATE.position+0.1)%216; $('rPos').value=STATE.position; $('vPos').textContent=STATE.position.toFixed(1)+'s'; H.state&&H.state(STATE);} },100);
+</script>
+</body>
+</html>

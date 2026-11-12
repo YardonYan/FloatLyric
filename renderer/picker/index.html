@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'">
+<title>取色针</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="picker.css">
+</head>
+<body>
+  <div class="hit" id="hit"></div>
+
+  <div class="loupe" id="loupe">
+    <div class="glass">
+      <img id="patch" alt="" draggable="false">
+      <div class="grid" aria-hidden="true"></div>
+      <div class="cross" aria-hidden="true"></div>
+    </div>
+    <div class="ring" id="ring" aria-hidden="true"></div>
+    <div class="readout">
+      <span class="swatch" id="swatch"></span>
+      <span class="hex num" id="hex">#000000</span>
+      <span class="rgb num" id="rgb">0,0,0</span>
+    </div>
+    <div class="hint">点击取色 · Esc 取消</div>
+  </div>
+
+  <script src="../shared/color.js"></script>
+  <script src="picker.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+[
+  { "type": "mousePressed", "x": 743, "y": 133, "wait": 120 },
+  { "type": "mouseMoved", "x": 763, "y": 143, "wait": 80 },
+  { "type": "mouseMoved", "x": 843, "y": 183, "wait": 80 },
+  { "type": "mouseMoved", "x": 943, "y": 233, "wait": 120 },
+  { "type": "mouseReleased", "x": 943, "y": 233, "wait": 150 },
+  { "type": "mouseMoved", "x": 1100, "y": 400, "wait": 150 },
+  { "type": "mouseMoved", "x": 500, "y": 300, "wait": 150 }
+]

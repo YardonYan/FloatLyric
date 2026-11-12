@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output (portable exe and unpacked app are published via Releases)
+dist/
+*.exe
+
+# Development logs and verification screenshots
+_logs/
+*.log
+
+# Machine-local npm config (contains an absolute cache path)
+.npmrc
+
+# Runtime user settings (contains lyric cache and personal preferences)
+settings.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

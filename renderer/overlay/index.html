@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'">
+<title>浮词</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="overlay.css">
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="pane" id="pane">
+      <div class="pane-bg" aria-hidden="true"></div>
+      <div class="sheen" aria-hidden="true"></div>
+      <div class="scrim" aria-hidden="true"></div>
+
+      <div class="hud" id="hud">
+        <button class="hud-btn" id="btnPick" title="屏幕取色针 (Alt+C)">
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+            <path d="M13.2 2.6a2.3 2.3 0 0 1 3.3 3.3l-1.5 1.5-3.3-3.3 1.5-1.5Z" fill="currentColor"/>
+            <path d="M10.6 5.2 4.3 11.5c-.3.3-.5.7-.6 1.1l-.6 2.6c-.1.5.3.9.8.8l2.6-.6c.4-.1.8-.3 1.1-.6l6.3-6.3-3.3-3.3Z" fill="currentColor" opacity=".72"/>
+          </svg>
+        </button>
+        <button class="hud-btn" id="btnSmaller" title="减小字号">
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M4 10h12" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
+        <button class="hud-btn" id="btnBigger" title="增大字号">
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+        </button>
+        <span class="hud-sep" aria-hidden="true"></span>
+        <button class="hud-btn" id="btnLock" title="锁定位置 (Alt+Shift+L)">
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+            <rect x="4.5" y="9" width="11" height="7.5" rx="2" fill="currentColor"/>
+            <path d="M7 9V6.8a3 3 0 0 1 6 0V9" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <button class="hud-btn" id="btnPanel" title="控制面板 (Alt+P)">
+          <svg viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+            <path d="M3.5 6h13M3.5 14h13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            <circle cx="8" cy="6" r="2.3" fill="currentColor"/><circle cx="13" cy="14" r="2.3" fill="currentColor"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="lyric" id="lyric">
+        <div class="ctx ctx-prev" id="ctxPrev"></div>
+        <div class="main">
+          <div class="line" id="line"></div>
+          <div class="tr" id="tr"></div>
+        </div>
+        <div class="ctx ctx-next" id="ctxNext"></div>
+      </div>
+
+      <div class="idle" id="idle">
+        <span class="idle-dot" aria-hidden="true"></span>
+        <span class="idle-text" id="idleText">等待网易云播放</span>
+      </div>
+
+      <div class="progress" id="progress"><i id="progressFill"></i></div>
+      <div class="grip" id="grip" title="拖动调整大小"></div>
+    </div>
+  </div>
+
+  <script src="../shared/color.js"></script>
+  <script src="../shared/fonts.js"></script>
+  <script src="overlay.js"></script>
+</body>
+</html>

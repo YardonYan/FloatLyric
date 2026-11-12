@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'">
+<title>浮词 · 控制台</title>
+<link rel="stylesheet" href="../shared/tokens.css">
+<link rel="stylesheet" href="panel.css">
+</head>
+<body>
+  <header class="chrome">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <span class="name">浮词</span>
+      <span class="ver num" id="ver"></span>
+    </div>
+    <div class="conn" id="conn" data-phase="idle">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="conn-text" id="connText">未连接</span>
+    </div>
+    <div class="winbtns">
+      <button class="winbtn" id="btnHide" title="收起面板">
+        <svg viewBox="0 0 16 16" width="13" height="13"><path d="M3.5 8h9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <button class="winbtn danger" id="btnQuit" title="退出浮词">
+        <svg viewBox="0 0 16 16" width="13" height="13"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="scroll">
+    <section class="now">
+      <div class="cover" id="cover"><span class="cover-ph" aria-hidden="true"></span></div>
+      <div class="meta">
+        <div class="title" id="songTitle">未在播放</div>
+        <div class="artist" id="songArtist">连接网易云后自动跟随</div>
+        <div class="transport">
+          <button class="tbtn" id="btnPrev" title="上一首">
+            <svg viewBox="0 0 18 18" width="15" height="15"><path d="M13.5 4v10L6.5 9l7-5Z" fill="currentColor"/><rect x="4" y="4" width="1.8" height="10" rx=".9" fill="currentColor"/></svg>
+          </button>
+          <button class="tbtn primary" id="btnToggle" title="播放 / 暂停">
+            <svg id="icoPlay" viewBox="0 0 18 18" width="16" height="16"><path d="M5.5 3.8v10.4L14 9 5.5 3.8Z" fill="currentColor"/></svg>
+            <svg id="icoPause" viewBox="0 0 18 18" width="16" height="16" style="display:none"><rect x="5" y="4" width="2.9" height="10" rx="1.3" fill="currentColor"/><rect x="10.1" y="4" width="2.9" height="10" rx="1.3" fill="currentColor"/></svg>
+          </button>
+          <button class="tbtn" id="btnNext" title="下一首">
+            <svg viewBox="0 0 18 18" width="15" height="15"><path d="M4.5 4v10l7-5-7-5Z" fill="currentColor"/><rect x="12.2" y="4" width="1.8" height="10" rx=".9" fill="currentColor"/></svg>
+          </button>
+          <div class="time num"><span id="tCur">0:00</span><span class="slash">/</span><span id="tDur">0:00</span></div>
+        </div>
+      </div>
+      <div class="bar"><i id="barFill"></i></div>
+    </section>
+
+    <section class="block" id="connBlock" hidden>
+      <div class="block-head"><h2>连接网易云</h2></div>
+      <p class="note" id="connNote"></p>
+      <div class="row-btns">
+        <button class="btn solid" id="btnLaunch">以调试模式启动网易云</button>
+        <button class="btn" id="btnReconnect">重新检测</button>
+      </div>
+      <p class="fine">浮词通过本机调试端口读取播放进度，端口只监听 127.0.0.1。若网易云已在运行，需要重启它一次。</p>
+    </section>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>歌词颜色</h2>
+        <span class="head-val num" id="hexVal">#F2F4F8</span>
+      </div>
+
+      <div class="pickrow">
+        <button class="pick" id="btnPick">
+          <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+            <path d="M13.2 2.6a2.3 2.3 0 0 1 3.3 3.3l-1.5 1.5-3.3-3.3 1.5-1.5Z" fill="currentColor"/>
+            <path d="M10.6 5.2 4.3 11.5c-.3.3-.5.7-.6 1.1l-.6 2.6c-.1.5.3.9.8.8l2.6-.6c.4-.1.8-.3 1.1-.6l6.3-6.3-3.3-3.3Z" fill="currentColor" opacity=".72"/>
+          </svg>
+          <span>屏幕取色针</span>
+          <kbd>Alt+C</kbd>
+        </button>
+        <label class="swatch-big" id="swatchBig" title="点击打开系统调色板">
+          <input type="color" id="colorInput">
+        </label>
+      </div>
+
+      <div class="ctl">
+        <div class="ctl-top"><label for="shade">深浅</label><span class="num" id="shadeVal">0</span></div>
+        <input type="range" id="shade" min="-100" max="100" step="1" class="range shade-range">
+        <div class="scale-marks"><span>更深</span><span>原色</span><span>更浅</span></div>
+      </div>
+
+      <div class="presets" id="presets"></div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>字体与排版</h2></div>
+
+      <div class="ctl">
+        <div class="ctl-top"><label for="fontSize">字号</label><span class="num" id="fontSizeVal">34 px</span></div>
+        <input type="range" id="fontSize" min="14" max="96" step="1" class="range">
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="fontFamily">字体</label>
+          <select id="fontFamily">
+            <option value="system">系统默认</option>
+            <option value="yahei">微软雅黑</option>
+            <option value="dengxian">等线</option>
+            <option value="simhei">黑体</option>
+            <option value="simsun">宋体</option>
+            <option value="kaiti">楷体</option>
+            <option value="segoe">Segoe UI</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fontWeight">字重</label>
+          <select id="fontWeight">
+            <option value="400">常规</option>
+            <option value="500">中等</option>
+            <option value="600">半粗</option>
+            <option value="700">粗体</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="toggles">
+        <label class="tg"><input type="checkbox" id="showTranslation"><span class="track"></span><span class="tg-label">显示翻译</span></label>
+        <label class="tg"><input type="checkbox" id="showContext"><span class="track"></span><span class="tg-label">显示上下句</span></label>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>底栏外观</h2></div>
+
+      <div class="ctl">
+        <div class="ctl-top"><label for="bgOpacity">底色浓度</label><span class="num" id="bgOpacityVal">22%</span></div>
+        <input type="range" id="bgOpacity" min="0" max="95" step="1" class="range">
+      </div>
+
+      <div class="ctl">
+        <div class="ctl-top"><label for="glow">光晕</label><span class="num" id="glowVal">55%</span></div>
+        <input type="range" id="glow" min="0" max="100" step="1" class="range">
+      </div>
+
+      <div class="toggles">
+        <label class="tg"><input type="checkbox" id="showProgressBar"><span class="track"></span><span class="tg-label">进度条</span></label>
+        <label class="tg"><input type="checkbox" id="locked"><span class="track"></span><span class="tg-label">锁定位置</span></label>
+        <label class="tg"><input type="checkbox" id="clickThrough"><span class="track"></span><span class="tg-label">鼠标穿透</span></label>
+        <label class="tg"><input type="checkbox" id="autoLaunch"><span class="track"></span><span class="tg-label">开机自启</span></label>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head">
+        <h2>歌词同步</h2>
+        <span class="head-val num" id="offsetVal">0 ms</span>
+      </div>
+      <div class="offset">
+        <button class="btn sq" id="offMinus" title="歌词延后 100ms">−</button>
+        <input type="range" id="offsetMs" min="-3000" max="3000" step="50" class="range">
+        <button class="btn sq" id="offPlus" title="歌词提前 100ms">+</button>
+      </div>
+      <div class="row-btns">
+        <button class="btn" id="btnRefetch">重新搜索歌词</button>
+        <button class="btn" id="btnImport">导入 .lrc</button>
+        <button class="btn ghost" id="offReset">归零</button>
+      </div>
+      <p class="fine" id="lyricSource">歌词来源：—</p>
+      <input type="file" id="lrcFile" accept=".lrc,.txt" hidden>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>窗口</h2></div>
+      <div class="grid2">
+        <div class="field">
+          <label for="ovWidth">宽度</label>
+          <input type="number" id="ovWidth" min="280" max="3000" step="10">
+        </div>
+        <div class="field">
+          <label for="ovHeight">高度</label>
+          <input type="number" id="ovHeight" min="70" max="1200" step="10">
+        </div>
+      </div>
+      <div class="row-btns">
+        <button class="btn" id="btnCenter">移到屏幕底部居中</button>
+        <button class="btn ghost" id="btnToggleOverlay">显示 / 隐藏歌词</button>
+      </div>
+      <p class="fine">拖动歌词栏可移动位置，右下角可拉伸大小。快捷键：Alt+L 显隐歌词，Alt+P 面板，Alt+C 取色，Alt+Shift+L 锁定。</p>
+    </section>
+  </div>
+
+  <script src="../shared/color.js"></script>
+  <script src="../shared/fonts.js"></script>
+  <script src="panel.js"></script>
+</body>
+</html>
