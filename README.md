@@ -108,7 +108,7 @@ npm start
 
 ### 途径一：便携版 exe
 
-适合只想用、不想装 Node.js 的情况。从 [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) 下载 `浮词-1.0.0-portable.exe`，放到一个不会被频繁移动的目录，双击运行。设置写在 `%APPDATA%\浮词\settings.json`，与 exe 所在位置无关。
+适合只想用、不想装 Node.js 的情况。从 [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) 下载 `FloatLyric-1.0.0-portable.exe`，放到一个不会被频繁移动的目录，双击运行。设置写在 `%APPDATA%\浮词\settings.json`，与 exe 所在位置无关。自行用 `npm run dist` 构建时，产物名按打包配置为 `浮词-1.0.0-portable.exe`，两者内容一致。
 
 需要注意：开启开机自启时会登记当前 exe 的路径；之后如果把 exe 移到别处，请在面板里关掉再开一次开关，让登记的路径更新。
 

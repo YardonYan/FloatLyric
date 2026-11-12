@@ -108,7 +108,7 @@ Pick whichever of the three fits.
 
 ### Option 1: Portable exe
 
-For users who do not want Node.js installed. Download `浮词-1.0.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits.
+For users who do not want Node.js installed. Download `FloatLyric-1.0.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` is named `浮词-1.0.0-portable.exe` by the packaging config; the contents are the same.
 
 One caveat: enabling launch at login registers the current exe path. If you later move the exe, toggle the switch off and back on in the panel so the registered path is refreshed.
 
