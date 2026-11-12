@@ -1,4 +1,4 @@
-param([string]$Out = "D:\For_My_Self\FloatLyric\_logs\shot.png")
+param([string]$Out = (Join-Path $env:TEMP 'floatlyric-shot.png'))
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $b = [System.Windows.Forms.SystemInformation]::VirtualScreen
