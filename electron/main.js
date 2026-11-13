@@ -7,6 +7,7 @@ const fs = require('node:fs');
 const settings = require('./settings');
 const { NcmBridge, isNcmRunning } = require('./ncm');
 const { fetchLyrics, parseLrc, clean } = require('./lyrics');
+const { putLyric, touchLyric } = require('./lyric-cache');
 const eyedropper = require('./eyedropper');
 const { log, attach } = require('./log');
 
@@ -226,17 +227,9 @@ function songKey(song) {
   return `${song.title}|${song.artist}|${d}`;
 }
 const legacySongKey = song => `${song.title}|${song.artist}`;
-const MAX_CACHE_SONGS = 80;
 
 function cacheLyric(key, value) {
-  const cache = { ...(settings.get().lyricCache || {}) };
-  delete cache[key];
-  cache[key] = value;
-  const keys = Object.keys(cache);
-  if (keys.length > MAX_CACHE_SONGS) {
-    for (const k of keys.slice(0, keys.length - MAX_CACHE_SONGS)) delete cache[k];
-  }
-  settings.set({ lyricCache: cache });
+  settings.set({ lyricCache: putLyric(settings.get().lyricCache || {}, key, value) });
 }
 
 function hasLyric(value) {
@@ -254,6 +247,7 @@ async function loadLyrics(song) {
   if (hasLyric(hit)) {
     log('lyrics cache hit', key, hit.lines ? hit.lines.length : hit.source);
     if (!cache[key]) cacheLyric(key, hit);
+    else settings.set({ lyricCache: touchLyric(cache, key) });
     currentLyrics = { lines: hit.lines || [], source: hit.source, matched: hit.matched, matchedArtist: hit.matchedArtist };
     broadcast('lyrics:data', currentLyrics);
     return;
