@@ -3,37 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { app } = require('electron');
-
-const DEFAULTS = {
-  fontSize: 22,
-  fontWeight: 400,
-  fontFamily: 'system',
-  baseColor: '#3D434B',
-  shade: 0,
-  bgOpacity: 0,
-  bgMode: 'auto',
-  glow: 0,
-  align: 'left',
-  showContext: false,
-  showTranslation: true,
-  translationScale: 0.52,
-  offsetMs: 0,
-  locked: false,
-  clickThrough: false,
-  showProgressBar: false,
-  autoLaunch: false,
-  closeAction: 'tray',
-  shortcuts: {
-    toggle: 'Alt+L',
-    panel: 'Alt+P',
-    pick: 'Alt+C',
-    lock: 'Alt+Shift+L'
-  },
-  cdpPort: 9222,
-  overlayBounds: null,
-  panelBounds: null,
-  lyricCache: {}
-};
+const { DEFAULTS, mergeSettings } = require('./settings-migrate');
 
 let file = null;
 let data = { ...DEFAULTS };
@@ -44,10 +14,7 @@ function init() {
   try {
     if (fs.existsSync(file)) {
       const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
-      data = { ...DEFAULTS, ...saved };
-      // Nested maps need a deep merge, otherwise an older settings file would
-      // drop newly added defaults entirely.
-      data.shortcuts = { ...DEFAULTS.shortcuts, ...(saved.shortcuts || {}) };
+      data = mergeSettings(saved);
     }
   } catch { data = { ...DEFAULTS }; }
   return data;
