@@ -175,7 +175,7 @@ build/       打包用图标
 scripts/     开发期工具：CDP 查询、输入注入、系统级鼠标与截屏、图标生成
 preview/     歌词条静态设计稿
 research/    前期方案验证（SMTC 探针、CDP 抓取脚本），不参与运行
-tools/       README 配图生成脚本
+tools/       开发期工具：README 配图生成、Release 发布脚本
 tests/       Node 内置 test runner 的单元测试（歌词解析、配色计算）
 .github/     GitHub Actions：测试、lint 与打包校验
 eslint.config.js  ESLint 配置
@@ -184,6 +184,13 @@ eslint.config.js  ESLint 配置
 `assets/hero.svg` 与 `assets/architecture.svg` 由 `python tools/gen_readme_images.py` 生成，零依赖；改图请改脚本后重新生成，不要直接编辑 SVG。
 
 CI 工作流在 `.github/workflows/ci.yml`，推到 main 或发起 PR 即触发：`check` 跑 `npm ci`、`npm test`、`npm run lint`；`build` 跑 `npm run dist:dir` 并把 `dist/win-unpacked` 作为 artifact 存 7 天（不做 portable 自解压包，省每次推送的构建时间）。
+
+发版走 `tools/release.py`：版本号取自 `package.json`，正文取自 `CHANGELOG.md` 里该版本的条目，产物大小与 SHA-256 自动算出，发布后回读校验。全程 UTF-8 并在提交前自检，避免中文在 Windows 命令行里被转成问号。先 `npm run dist` 出包，再：
+
+```bash
+GITHUB_TOKEN=ghp_xxx python tools/release.py --dry-run   # 只打印，不写
+GITHUB_TOKEN=ghp_xxx python tools/release.py
+```
 
 ## 已知限制
 
