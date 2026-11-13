@@ -29,6 +29,7 @@ let lastProcessCheck = 0;
 let pointerTimer = null;
 let hotZones = [];
 let hot = false;
+let balloonShown = false;
 
 // Phases where nothing is in flight and a probe is worth trying again.
 const AUTO_PHASES = new Set(['idle', 'not-running', 'needs-restart', 'error']);
@@ -387,6 +388,22 @@ function showPanel() {
   panel.focus();
 }
 
+// Tell the user where the panel went the first time they close it to the tray.
+// Windows may suppress this balloon under Focus Assist, so it is only a hint.
+function notifyTray() {
+  if (!tray || balloonShown) return;
+  balloonShown = true;
+  try {
+    const opts = {
+      title: '浮词已收起到托盘',
+      content: '点击任务栏右下角的浮词图标，或按 Alt+P，可重新打开控制面板。'
+    };
+    const icon = nativeImage.createFromPath(path.join(ROOT, 'assets', 'icon.png'));
+    if (!icon.isEmpty()) opts.icon = icon.resize({ width: 32, height: 32 });
+    tray.displayBalloon(opts);
+  } catch {}
+}
+
 function createTray() {
   const iconPath = path.join(ROOT, 'assets', 'tray.png');
   let img = fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : nativeImage.createEmpty();
@@ -621,6 +638,20 @@ function registerIpc() {
   });
   ipcMain.handle('panel:show', () => { showPanel(); return true; });
   ipcMain.handle('panel:hide', () => { panel?.hide(); return true; });
+  // The panel's X follows the user's preference: park in the tray or quit.
+  ipcMain.handle('panel:close', () => {
+    if (settings.get().closeAction === 'quit') {
+      app.quit();
+      return { action: 'quit' };
+    }
+    let visible = false;
+    if (panel && !panel.isDestroyed()) {
+      panel.hide();
+      visible = panel.isVisible();
+    }
+    notifyTray();
+    return { action: 'tray', visible };
+  });
   ipcMain.handle('app:quit', () => { app.quit(); });
   ipcMain.handle('app:version', () => app.getVersion());
   ipcMain.handle('shell:open', (_e, url) => { shell.openExternal(url); });

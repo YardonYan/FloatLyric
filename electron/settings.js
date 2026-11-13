@@ -22,6 +22,7 @@ const DEFAULTS = {
   clickThrough: false,
   showProgressBar: false,
   autoLaunch: false,
+  closeAction: 'tray',
   shortcuts: {
     toggle: 'Alt+L',
     panel: 'Alt+P',

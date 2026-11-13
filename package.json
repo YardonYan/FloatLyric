@@ -1,7 +1,7 @@
 {
   "name": "floatlyric",
   "productName": "浮词",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "跟随网易云音乐的桌面悬浮歌词，支持屏幕取色针与字号调节",
   "main": "electron/main.js",
   "author": "YardonYan",

@@ -54,7 +54,7 @@ Both are real runtime screenshots: the first shows the strip with its background
 | Colour lightness | Adjusts perceptual lightness in OKLCH; negative is deeper, positive is lighter |
 | Typography | Left-aligned by default, so a long line grows to the right instead of over the left side; font size, weight, installed system font, context lines and translation toggle; lines that still overflow at the minimum size scroll horizontally |
 | Strip appearance | Background density, glow, and progress bar toggle |
-| Window behaviour | Drag the lyric text to move, transparent areas are click-through, either vertical edge resizes the width, bottom-right grip resizes both dimensions, lock position, one-key show / hide, configurable shortcuts |
+| Window behaviour | Drag the lyric text to move, transparent areas are click-through, either vertical edge resizes the width, bottom-right grip resizes both dimensions, lock position, one-key show / hide, the close button can send the panel to the tray or quit, configurable shortcuts |
 | Extras | Launch at login, tray menu, playback buttons, settings and lyric cache (keyed by title/artist/duration, capped at 80 songs) |
 
 ## Quick Start
@@ -75,7 +75,7 @@ Pick whichever of the three fits.
 
 ### Option 1: Portable exe
 
-For users who do not want Node.js installed. Download `FloatLyric-1.1.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
+For users who do not want Node.js installed. Download `FloatLyric-1.1.1-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
 
 One caveat: enabling launch at login registers the current exe path. If you later move the exe, toggle the switch off and back on in the panel so the registered path is refreshed.
 
@@ -142,6 +142,8 @@ The port can be changed through the `cdpPort` field in the settings file; if the
 | Open the panel | `Alt+P`, or the tray icon |
 | Import local lyrics | "Import .lrc" in the panel; pick a `.lrc` / `.txt` file |
 | Re-fetch lyrics | The button of the same name in the panel forces a refresh for the current song |
+| Close the panel | The X button; choose "send to tray" (default) or "quit" under Window in the panel |
+| Reopen the panel | Desktop shortcut, click the tray icon, or `Alt+P` |
 | Launch at login | Panel toggle |
 | Playback control | Previous, pause / play and next buttons in the panel |
 

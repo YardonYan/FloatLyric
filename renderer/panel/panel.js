@@ -56,6 +56,8 @@ function syncControls() {
   $('locked').checked = !!cfg.locked;
   $('clickThrough').checked = !!cfg.clickThrough;
   $('autoLaunch').checked = !!cfg.autoLaunch;
+  $('closeAction').value = cfg.closeAction || 'tray';
+  $('btnQuit').title = cfg.closeAction === 'quit' ? '退出浮词' : '收起到托盘';
   if (bounds) { $('ovWidth').value = bounds.width; $('ovHeight').value = bounds.height; }
   syncShortcuts();
   paintColor();
@@ -238,7 +240,7 @@ async function init() {
   });
 
   $('btnHide').onclick = () => window.fl.panel.hide();
-  $('btnQuit').onclick = () => window.fl.app.quit();
+  $('btnQuit').onclick = () => window.fl.panel.close();
   $('btnPick').onclick = () => window.fl.pick.start();
   $('btnLaunch').onclick = async () => { setConn('launching'); await window.fl.ncm.launch(); };
   $('btnReconnect').onclick = async () => { setConn('probing'); await window.fl.ncm.reconnect(); };
@@ -264,6 +266,8 @@ async function init() {
   for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch']]) {
     $(id).onchange = e => set({ [key]: e.target.checked });
   }
+
+  $('closeAction').onchange = e => set({ closeAction: e.target.value });
 
   for (const input of document.querySelectorAll('.sc-input')) {
     input.addEventListener('focus', () => input.classList.add('capturing'));

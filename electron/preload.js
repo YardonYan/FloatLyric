@@ -38,7 +38,11 @@ contextBridge.exposeInMainWorld('fl', {
     toggle: () => ipcRenderer.invoke('overlay:toggle'),
     show: () => ipcRenderer.invoke('overlay:show')
   },
-  panel: { show: () => ipcRenderer.invoke('panel:show'), hide: () => ipcRenderer.invoke('panel:hide') },
+  panel: {
+    show: () => ipcRenderer.invoke('panel:show'),
+    hide: () => ipcRenderer.invoke('panel:hide'),
+    close: () => ipcRenderer.invoke('panel:close')
+  },
   app: { quit: () => ipcRenderer.invoke('app:quit'), version: () => ipcRenderer.invoke('app:version') },
   shell: { open: url => ipcRenderer.invoke('shell:open', url) },
   dev: {
