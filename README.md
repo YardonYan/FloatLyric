@@ -213,7 +213,9 @@ eslint.config.js  ESLint 配置
 
 `assets/hero.svg` 与 `assets/architecture.svg` 由 `python tools/gen_readme_images.py` 生成，零依赖；改图请改脚本后重新生成，不要直接编辑 SVG。
 
-CI 工作流模板位于 `.github/ci.yml.example`，重命名为 `.github/workflows/ci.yml` 并推送即可启用；推送令牌需要具备 `workflow` scope。
+CI 工作流在 `.github/workflows/ci.yml`，推到 main 或发起 PR 即触发：`check` 跑 `npm ci`、`npm test`、`npm run lint`；`build` 跑 `npm run dist:dir` 并把 `dist/win-unpacked` 作为 artifact 存 7 天（不做 portable 自解压包，省每次推送的构建时间）。
+
+推送含 workflow 文件的提交，令牌需要具备 `workflow` scope。classic PAT 勾选 `workflow` 即可；Git Credential Manager 的 OAuth 授权不含这个范围，会在推送时被 GitHub 拒绝，改用 `git credential-manager github login --pat` 与带 scope 的 PAT。
 
 ## 已知限制
 
