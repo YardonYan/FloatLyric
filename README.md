@@ -213,6 +213,8 @@ eslint.config.js  ESLint 配置
 
 `assets/hero.svg` 与 `assets/architecture.svg` 由 `python tools/gen_readme_images.py` 生成，零依赖；改图请改脚本后重新生成，不要直接编辑 SVG。
 
+CI 工作流模板位于 `.github/ci.yml.example`，重命名为 `.github/workflows/ci.yml` 并推送即可启用；推送令牌需要具备 `workflow` scope。
+
 ## 已知限制
 
 - 取色采用「唤起即冻结」：取色罩里看到的是唤起那一刻的画面，视频会停在那一帧。这是为了避开 Chromium 窗口被遮挡后停止出帧、导致实时抓屏读到黑色的问题。取消或完成取色后恢复实时桌面。
