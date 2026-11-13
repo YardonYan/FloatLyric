@@ -2,13 +2,13 @@
 
 <img src="assets/hero.svg" alt="浮词：同一句歌词的两种外观" width="100%">
 
-**跟随网易云音乐播放进度的桌面悬浮歌词。默认是一行裸文字，安静地落在工作界面里。**
+**Windows 上的桌面悬浮歌词，跟随网易云音乐播放进度。默认只有一行裸文字，安静地落在工作界面里。**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![平台](https://img.shields.io/badge/平台-Windows%2010%20·%2011-blue.svg)](#已知限制)
 [![Electron](https://img.shields.io/badge/Electron-45.3.1-47848F.svg)](package.json)
 [![运行时依赖](https://img.shields.io/badge/运行时依赖-0-brightgreen.svg)](#工作方式)
-[![版本](https://img.shields.io/badge/version-1.1.0-informational.svg)](package.json)
+[![版本](https://img.shields.io/github/v/release/YardonYan/FloatLyric?label=version&color=informational)](https://github.com/YardonYan/FloatLyric/releases/latest)
 
 **中文** · [English](README.en.md)
 
@@ -18,41 +18,15 @@
 
 > 工作时想看歌词，但把网易云切到前台太张扬。不如让当前这一句，以和正文差不多的样子，留在屏幕上。
 
-浮词是一个 Windows 桌面悬浮歌词条：跟随网易云音乐客户端的播放进度，显示当前歌词与可选翻译。默认形态只有一行 22px 的深灰文字，没有底色、没有光晕、没有进度条，看起来像文档里随手多出来的一句话。歌词默认左对齐，长句向右展开，不会向左压到自己正在看的内容；窗口透明区域不拦截鼠标。想看得更清楚时，颜色、深浅、字号、字重、底色浓度与光晕都能在面板里连续调节；整条可以拖到屏幕任意位置，也能锁定或完全穿透。
+浮词是一个 Windows 桌面悬浮歌词条，跟随网易云客户端的播放进度显示当前歌词与可选翻译。默认只有一行裸文字，没有底色、没有光晕、没有进度条，看起来像文档里随手多出来的一句话。
 
-纯 Electron 加原生 JavaScript，没有原生模块，运行时不依赖任何第三方包；字体全部使用系统已安装字体，不随项目分发字体文件。
+歌词左对齐，长句向右展开，不压住左边正在看的内容；窗口透明区域不拦截鼠标。想更醒目时，颜色、深浅、字号、字重、底色浓度与光晕都能连续调节；整条可拖到屏幕任意位置，也能锁定或完全穿透。
 
-## 目录
-
-- [这是什么](#这是什么)
-- [效果预览](#效果预览)
-- [功能一览](#功能一览)
-- [快速开始](#快速开始)
-- [使用途径](#使用途径)
-- [第一次连接网易云](#第一次连接网易云)
-- [操作与快捷键](#操作与快捷键)
-- [工作方式](#工作方式)
-- [设置与歌词](#设置与歌词)
-- [项目结构](#项目结构)
-- [已知限制](#已知限制)
-- [排错](#排错)
-- [更新日志](CHANGELOG.md)
-- [合规与免责](#合规与免责)
-- [贡献](#贡献)
-- [许可](#许可)
+纯 Electron 加原生 JavaScript，没有原生模块，运行时零第三方依赖。
 
 ## 这是什么
 
-桌面歌词软件通常是一块明显的浮窗：带背景、带专辑封面、带播放控制，一眼就能看出在听歌。浮词走的是相反的方向，默认把歌词压到最低存在感：
-
-| 默认项 | 取值 |
-| --- | --- |
-| 字号与字重 | 22px、常规字重 |
-| 颜色 | 深灰墨色 `#3D434B` |
-| 底色浓度 | 0，完全没有色块 |
-| 光晕 | 0，完全没有描边 |
-| 进度条 | 关闭 |
-| 窗口尺寸 | 620 × 84，可拖右下角手柄缩小 |
+桌面歌词软件通常是一块明显的浮窗：带背景、带专辑封面、带播放控制，一眼就能看出在听歌。浮词走的是相反的方向，默认把歌词压到最低存在感：一行 22px 常规字重的深灰墨色 `#3D434B`，底色浓度与光晕都是 0，进度条关闭，窗口 620 × 84（可拖右下角手柄缩小）。
 
 想更融入：用屏幕取色针吸一下工作界面的正文颜色，歌词条就换成和周围文字一致的墨色。想更醒目：把底色浓度或光晕滑杆调高，色块垫底和柔光描边会回来。两个滑杆都从 0 连续变化，0 就是彻底关闭，不是"最低档"。
 
@@ -66,7 +40,7 @@
   <img src="assets/screenshot-panel.png" alt="控制面板：颜色、字体与底栏外观" width="42%">
 </p>
 
-上面两张是实际运行截图：第一张为开启底色与进度条后的歌词条，第二张为控制面板。页首的示意图展示的是默认裸文字与调高底色后的对比。
+上面两张是实际运行截图：第一张为开启底色与进度条后的歌词条，第二张为控制面板。
 
 ## 功能一览
 
@@ -84,26 +58,15 @@
 
 ## 快速开始
 
-三个前提，缺一条就跑不起来：
+到 [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) 下载便携版 exe，双击运行，无需安装。用之前确认三件事，缺一条跑不起来：
 
 | 前提 | 说明 |
 | --- | --- |
 | Windows 10 / 11 | 主进程用到了 PowerShell、注册表查询、系统任务列表与 Windows 屏幕捕获 |
 | 桌面版网易云音乐客户端 | 网页版、手机版与其他客户端不在支持范围内 |
-| 调试端口可用 | 客户端需以 `--remote-debugging-port=9222` 启动；首次在面板里点一次即可，详见下一节 |
+| 调试端口可用 | 客户端需以 `--remote-debugging-port=9222` 启动；首次在面板里点一次即可，详见下文「第一次连接网易云」 |
 
-只想直接用的话，到 [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) 下载便携版 exe，双击运行，无需安装。想跑源码：
-
-```powershell
-git clone https://github.com/YardonYan/FloatLyric.git
-cd FloatLyric
-npm install
-npm start
-npm test      # 单元测试
-npm run lint  # 代码检查
-```
-
-首次启动时不会自动改网易云的任何文件，只会尝试连接本机的 9222 端口。具体见「第一次连接网易云」。
+首次启动不会改动网易云的任何文件，只会尝试连接本机的 9222 端口。想从源码运行或自行打包，见下一节的途径二、途径三。
 
 ## 使用途径
 
@@ -120,8 +83,12 @@ npm run lint  # 代码检查
 适合想看实现或临时改动。需要 Node.js（建议 20 或更高）与 npm：
 
 ```powershell
+git clone https://github.com/YardonYan/FloatLyric.git
+cd FloatLyric
 npm install
 npm start
+npm test      # 单元测试
+npm run lint  # 代码检查
 ```
 
 开发模式用 `npm run dev`，仅在此模式下会注册开发期专用的全屏截图接口，打包产物中不存在这些接口。
@@ -215,8 +182,6 @@ eslint.config.js  ESLint 配置
 
 CI 工作流在 `.github/workflows/ci.yml`，推到 main 或发起 PR 即触发：`check` 跑 `npm ci`、`npm test`、`npm run lint`；`build` 跑 `npm run dist:dir` 并把 `dist/win-unpacked` 作为 artifact 存 7 天（不做 portable 自解压包，省每次推送的构建时间）。
 
-推送含 workflow 文件的提交，令牌需要具备 `workflow` scope。classic PAT 勾选 `workflow` 即可；Git Credential Manager 的 OAuth 授权不含这个范围，会在推送时被 GitHub 拒绝，改用 `git credential-manager github login --pat` 与带 scope 的 PAT。
-
 ## 已知限制
 
 - 取色采用「唤起即冻结」：取色罩里看到的是唤起那一刻的画面，视频会停在那一帧。这是为了避开 Chromium 窗口被遮挡后停止出帧、导致实时抓屏读到黑色的问题。取消或完成取色后恢复实时桌面。
@@ -260,6 +225,4 @@ CI 工作流在 `.github/workflows/ci.yml`，推到 main 或发起 PR 即触发�
 
 本项目采用 **Apache License 2.0**，全文见 [LICENSE](LICENSE)，版权行 `Copyright 2026 YardonYan`。
 
-项目此前仅在本机私有仓库中开发与验证，未对外分发；本次为首次公开发布，仓库内全部内容自始按 Apache-2.0 授权。开发期 `package.json` 中曾写作 MIT，已在开源前统一，不涉及任何已分发副本的授权变更。
-
-关于协议本身的两点说明：若将来变更开源协议，变更仅对新版本生效，此前已分发的副本仍按其获取时的协议授权；相比 MIT，Apache-2.0 增加了明确的专利授权条款，并要求对修改过的文件作出标注、保留原有的版权与 NOTICE 信息。
+首次公开发布时即采用 Apache-2.0。开发期 `package.json` 曾写作 MIT，开源前已统一，不涉及任何已分发副本。

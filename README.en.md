@@ -2,13 +2,13 @@
 
 <img src="assets/hero.svg" alt="FloatLyric: two appearances of the same lyric line" width="100%">
 
-**A desktop lyrics overlay that follows NetEase Cloud Music. By default it is a single bare line of text, sitting quietly on your working screen.**
+**A Windows desktop lyrics overlay that follows NetEase Cloud Music. By default it is one bare line of text, sitting quietly on your working screen.**
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20·%2011-blue.svg)](#known-limitations)
 [![Electron](https://img.shields.io/badge/Electron-45.3.1-47848F.svg)](package.json)
 [![Runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen.svg)](#how-it-works)
-[![Version](https://img.shields.io/badge/version-1.1.0-informational.svg)](package.json)
+[![Version](https://img.shields.io/github/v/release/YardonYan/FloatLyric?label=version&color=informational)](https://github.com/YardonYan/FloatLyric/releases/latest)
 
 [中文](README.md) · **English**
 
@@ -18,41 +18,15 @@
 
 > You want to see the lyrics while working, but switching NetEase Cloud Music to the foreground is a bit loud. So let the current line stay on screen, looking much like the text around it.
 
-FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation. The default appearance is a single 22px line of dark grey text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document. The line is left-aligned, so a longer lyric grows to the right instead of over the content on the left, and the transparent parts of the window are click-through. When you want it clearer, colour, lightness, font size, font weight, background density and glow are all continuously adjustable from the panel. The whole strip can be dragged anywhere, locked in place, or made fully click-through.
+FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation. The default appearance is a single bare line of text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document.
 
-Plain Electron plus vanilla JavaScript. No native modules, no third-party runtime dependencies, and only fonts already installed on the system — no font files are distributed with the project.
+The line is left-aligned, so a longer lyric grows to the right instead of covering the content on the left, and the transparent parts of the window are click-through. When you want it clearer, colour, lightness, font size, font weight, background density and glow are all continuously adjustable from the panel; the whole strip can be dragged anywhere, locked in place, or made fully click-through.
 
-## Table of Contents
-
-- [What This Is](#what-this-is)
-- [Screenshots](#screenshots)
-- [Features](#features)
-- [Quick Start](#quick-start)
-- [Ways to Use](#ways-to-use)
-- [Connecting to NetEase Cloud Music](#connecting-to-netease-cloud-music)
-- [Controls & Shortcuts](#controls--shortcuts)
-- [How It Works](#how-it-works)
-- [Settings & Lyrics](#settings--lyrics)
-- [Project Layout](#project-layout)
-- [Known Limitations](#known-limitations)
-- [Troubleshooting](#troubleshooting)
-- [Changelog](CHANGELOG.md)
-- [Compliance & Disclaimer](#compliance--disclaimer)
-- [Contributing](#contributing)
-- [License](#license)
+Plain Electron plus vanilla JavaScript. No native modules, zero third-party runtime dependencies.
 
 ## What This Is
 
-Desktop lyrics tools are usually an obvious floating window: background, album art, playback controls — unmistakably a music app. FloatLyric goes the other way and reduces the lyrics to the lowest possible profile:
-
-| Default | Value |
-| --- | --- |
-| Size and weight | 22px, regular |
-| Colour | Dark ink grey `#3D434B` |
-| Background density | 0 — no panel at all |
-| Glow | 0 — no outline at all |
-| Progress bar | Off |
-| Window size | 620 × 84, resizable from the bottom-right grip |
+Desktop lyrics tools are usually an obvious floating window: background, album art, playback controls — unmistakably a music app. FloatLyric goes the other way and reduces the lyrics to the lowest possible profile: one 22px line in regular weight, dark ink grey `#3D434B`, background density and glow both at 0, progress bar off, window 620 × 84 (resizable from the bottom-right grip).
 
 To blend in further, use the screen eyedropper to sample the body text colour of the window you are working in; the lyric line takes on the same ink. To make it stand out, raise the background density or glow sliders — a soft backing plate and a light halo come back. Both sliders scale continuously from 0, and 0 means genuinely off, not "the lowest visible setting".
 
@@ -66,7 +40,7 @@ To blend in further, use the screen eyedropper to sample the body text colour of
   <img src="assets/screenshot-panel.png" alt="The control panel: colour, typography and strip appearance" width="42%">
 </p>
 
-Both are real runtime screenshots: the first shows the strip with its background and progress bar enabled, the second shows the control panel. The illustration at the top of this page contrasts the default bare line with the raised-background look.
+Both are real runtime screenshots: the first shows the strip with its background and progress bar enabled, the second shows the control panel.
 
 ## Features
 
@@ -84,26 +58,15 @@ Both are real runtime screenshots: the first shows the strip with its background
 
 ## Quick Start
 
-Three prerequisites — miss one and nothing will work:
+Grab the portable exe from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) and double-click it — no installation. Confirm three things first, or nothing will work:
 
 | Prerequisite | Detail |
 | --- | --- |
 | Windows 10 / 11 | The main process uses PowerShell, registry lookups, the Windows task list and Windows screen capture |
 | NetEase Cloud Music desktop client | The web player, mobile apps and other clients are out of scope |
-| Debugging port available | The client needs to be started with `--remote-debugging-port=9222`; one click in the panel handles the first time, see the next section |
+| Debugging port available | The client needs to be started with `--remote-debugging-port=9222`; one click in the panel handles the first time, see "Connecting to NetEase Cloud Music" below |
 
-If you only want to use it, grab the portable exe from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) and double-click — no installation. To run from source:
-
-```powershell
-git clone https://github.com/YardonYan/FloatLyric.git
-cd FloatLyric
-npm install
-npm start
-npm test      # unit tests
-npm run lint  # lint
-```
-
-On first launch nothing in the NetEase installation is modified; the app only tries to reach port 9222 on localhost. See "Connecting to NetEase Cloud Music".
+On first launch nothing in the NetEase installation is modified; the app only tries to reach port 9222 on localhost. To run from source or package it yourself, see options 2 and 3 below.
 
 ## Ways to Use
 
@@ -120,8 +83,12 @@ One caveat: enabling launch at login registers the current exe path. If you late
 For reading the implementation or making a quick change. Requires Node.js (20 or newer recommended) and npm:
 
 ```powershell
+git clone https://github.com/YardonYan/FloatLyric.git
+cd FloatLyric
 npm install
 npm start
+npm test      # unit tests
+npm run lint  # lint
 ```
 
 `npm run dev` starts development mode. Only in this mode are the development-only full-screen capture handlers registered; they are absent from packaged builds.
@@ -215,8 +182,6 @@ eslint.config.js  ESLint configuration
 
 The CI workflow lives at `.github/workflows/ci.yml` and runs on every push to `main` and on pull requests: the `check` job runs `npm ci`, `npm test` and `npm run lint`; the `build` job runs `npm run dist:dir` and uploads `dist/win-unpacked` as an artifact for 7 days (no portable self-extractor, to keep every push cheap).
 
-Pushing a commit that touches workflow files needs a token with the `workflow` scope. A classic PAT with `workflow` ticked works; Git Credential Manager's OAuth grant does not include that scope and GitHub rejects such pushes — use `git credential-manager github login --pat` with a properly scoped PAT instead.
-
 ## Known Limitations
 
 - Picking uses "freeze on invocation": the picker shows the frame captured at the moment it opened, so video stays on that frame. This avoids the black regions caused by Chromium windows stopping presentation when occluded. The desktop becomes live again after cancelling or committing.
@@ -260,6 +225,4 @@ Please open an issue or discussion before starting a sizeable change. Keep the t
 
 Licensed under the **Apache License 2.0**. Full text in [LICENSE](LICENSE), copyright line `Copyright 2026 YardonYan`.
 
-The project was previously developed and validated only in a local private repository and was never distributed; this is its first public release, and everything in the repository is licensed under Apache-2.0 from the start. During development `package.json` said MIT; that was unified before publishing, so no previously distributed copy is affected.
-
-Two notes on licensing practice: if the license ever changes, the change applies to new versions only, and copies already distributed remain under the terms they were obtained under. Compared with MIT, Apache-2.0 adds an explicit patent grant and requires that modified files be marked and that existing copyright and NOTICE information be retained.
+Apache-2.0 from the first public release. During development `package.json` said MIT; that was unified before publishing, so no previously distributed copy is affected.
