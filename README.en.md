@@ -9,6 +9,7 @@
 [![Electron](https://img.shields.io/badge/Electron-45.3.1-47848F.svg)](package.json)
 [![Runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen.svg)](#how-it-works)
 [![Version](https://img.shields.io/github/v/release/YardonYan/FloatLyric?label=version&color=informational)](https://github.com/YardonYan/FloatLyric/releases/latest)
+[![Use](https://img.shields.io/badge/use-non--commercial-lightgrey.svg)](#disclaimer)
 
 [中文](README.md) · **English**
 
@@ -206,20 +207,16 @@ Each row below maps to a branch or hint that actually exists in the code. Work t
 | Launch at login stops working after moving the portable exe | The old path is registered; toggle the switch off and back on in the panel |
 | Source edits do not show up in the panel | Main-process changes need an app restart; for `renderer/`-only changes, close and reopen the panel |
 
-## Compliance & Disclaimer
+## Disclaimer
 
-- This is an independent personal open-source project. It is not affiliated with, authorised by, or endorsed by NetEase Cloud Music or its operator.
-- The project does not provide, download or cache audio files. It only reads playback state and lyric text already displayed by the client on the local machine. Lyrics remain the property of their respective rights holders.
-- The project does not inject into processes, install hooks, or modify the client's installation directory. Whether launching the client with debugging flags is permitted is for the user to decide, in line with applicable terms of service and local policy.
-- Fonts are loaded from those already installed on the system; no font files are distributed.
+This is a personal open-source project, written to learn about Windows desktop windows, the Chromium debugging protocol and the basics of an Electron app. **It must not be used commercially.**
+
+- It is not affiliated with, authorised by, or endorsed by NetEase Cloud Music or its operator. "NetEase Cloud Music" in the project name only identifies the client it talks to; it implies no partnership or endorsement.
+- Songs, lyrics, album metadata and related content are the property of NetEase Cloud Music and their respective rights holders. The project does not provide, download, store or distribute any audio, lyric or font file; it only reads the playback state and lyric text already displayed in the client's own interface on the local machine.
+- The project does not inject into client processes, install hooks, or modify any file in the client's installation directory. Whether launching the client with debugging flags is permitted, and any account, service or compliance risk that follows, is for the user to judge and bear.
+- The author accepts no liability for any direct or indirect loss arising from the use of, or inability to use, this project.
 - The repository is licensed under Apache-2.0, which covers this project's code and documentation only. It does not imply the same freedom for third-party services, clients or lyric content.
 - If a rights holder considers any behaviour inappropriate, open an issue in this repository; the maintainer will review and adjust.
-
-## Contributing
-
-The most useful help is adapting to client redesigns: when NetEase changes its page structure, the reader expression in `extract.js` and the selectors in `ncm.js` may need to follow. An issue with the client version, Windows version, reproduction steps and the panel state makes that much faster to pin down.
-
-Please open an issue or discussion before starting a sizeable change. Keep the three existing constraints in code: zero third-party runtime dependencies, no native modules, and no font or audio files shipped with the project. Ports to other platforms and other players are not currently planned, but a mature proposal is welcome for discussion first.
 
 ## License
 
