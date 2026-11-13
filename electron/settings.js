@@ -13,7 +13,7 @@ const DEFAULTS = {
   bgOpacity: 0,
   bgMode: 'auto',
   glow: 0,
-  align: 'center',
+  align: 'left',
   showContext: false,
   showTranslation: true,
   translationScale: 0.52,
@@ -22,6 +22,12 @@ const DEFAULTS = {
   clickThrough: false,
   showProgressBar: false,
   autoLaunch: false,
+  shortcuts: {
+    toggle: 'Alt+L',
+    panel: 'Alt+P',
+    pick: 'Alt+C',
+    lock: 'Alt+Shift+L'
+  },
   cdpPort: 9222,
   overlayBounds: null,
   panelBounds: null,
@@ -38,6 +44,9 @@ function init() {
     if (fs.existsSync(file)) {
       const saved = JSON.parse(fs.readFileSync(file, 'utf8'));
       data = { ...DEFAULTS, ...saved };
+      // Nested maps need a deep merge, otherwise an older settings file would
+      // drop newly added defaults entirely.
+      data.shortcuts = { ...DEFAULTS.shortcuts, ...(saved.shortcuts || {}) };
     }
   } catch { data = { ...DEFAULTS }; }
   return data;

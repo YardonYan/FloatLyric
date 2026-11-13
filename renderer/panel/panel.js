@@ -57,7 +57,56 @@ function syncControls() {
   $('clickThrough').checked = !!cfg.clickThrough;
   $('autoLaunch').checked = !!cfg.autoLaunch;
   if (bounds) { $('ovWidth').value = bounds.width; $('ovHeight').value = bounds.height; }
+  syncShortcuts();
   paintColor();
+}
+
+const DEFAULT_SHORTCUTS = { toggle: 'Alt+L', panel: 'Alt+P', pick: 'Alt+C', lock: 'Alt+Shift+L' };
+const KEY_ALIAS = {
+  ' ': 'Space', ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right',
+  Enter: 'Return', '+': 'Plus', '-': 'Minus'
+};
+const MODIFIERS = ['Ctrl', 'Alt', 'Shift', 'Super'];
+const NAMED_KEYS = ['Space', 'Up', 'Down', 'Left', 'Right', 'Return', 'Tab', 'Backspace', 'Delete',
+  'Insert', 'Home', 'End', 'PageUp', 'PageDown', 'Escape'];
+
+function syncShortcuts() {
+  const sc = { ...DEFAULT_SHORTCUTS, ...(cfg.shortcuts || {}) };
+  for (const input of document.querySelectorAll('.sc-input')) {
+    input.value = sc[input.dataset.action] || '';
+  }
+  const kbd = document.querySelector('#btnPick kbd');
+  if (kbd) kbd.textContent = sc.pick || '—';
+}
+
+function accelFromEvent(e) {
+  const parts = [];
+  if (e.ctrlKey) parts.push('Ctrl');
+  if (e.altKey) parts.push('Alt');
+  if (e.shiftKey) parts.push('Shift');
+  if (e.metaKey) parts.push('Super');
+  if (!parts.length) return null;
+  const k = e.key;
+  if (MODIFIERS.includes(k)) return null;
+  let key = KEY_ALIAS[k] || k;
+  if (key.length === 1) key = key.toUpperCase();
+  else if (/^f\d{1,2}$/i.test(key)) key = key.toUpperCase();
+  else if (!NAMED_KEYS.includes(key)) return null;
+  return parts.concat(key).join('+');
+}
+
+let hintTimer = null;
+const SC_HINT = '点击输入框后按下新的组合键（需含 Alt / Ctrl / Shift），Esc 取消。留空表示不注册。';
+
+function showScHint(msg, bad) {
+  const el = $('scHint');
+  el.textContent = msg;
+  el.style.color = bad ? '#ff9b8f' : '';
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => {
+    el.textContent = SC_HINT;
+    el.style.color = '';
+  }, 4000);
 }
 
 const set = patch => window.fl.settings.set(patch).then(next => { cfg = next; syncControls(); });
@@ -108,14 +157,40 @@ function ingestState(s) {
   }
 }
 
+const PAUSED_FRAME_MS = 500;
+const IDLE_FRAME_MS = 1000;
+let frameTimer = null;
+let frameRaf = null;
+
+function stopLoop() {
+  if (frameTimer) { clearTimeout(frameTimer); frameTimer = null; }
+  if (frameRaf) { cancelAnimationFrame(frameRaf); frameRaf = null; }
+}
+
+function scheduleLoop(delay) {
+  stopLoop();
+  if (document.hidden) return;
+  if (delay > 0) {
+    frameTimer = setTimeout(() => {
+      frameTimer = null;
+      frameRaf = requestAnimationFrame(tick);
+    }, delay);
+  } else {
+    frameRaf = requestAnimationFrame(tick);
+  }
+}
+
 function tick() {
+  frameRaf = null;
+  let delay = IDLE_FRAME_MS;
   if (net && net.ok) {
     let p = net.position || 0;
     if (net.playing) p += (performance.now() - netAt) / 1000;
     $('tCur').textContent = fmtTime(p);
     if (net.duration) $('barFill').style.width = (clamp(p / net.duration, 0, 1) * 100).toFixed(2) + '%';
+    delay = net.playing ? 0 : PAUSED_FRAME_MS;
   }
-  requestAnimationFrame(tick);
+  scheduleLoop(delay);
 }
 
 function buildPresets() {
@@ -155,6 +230,12 @@ async function init() {
   window.fl.on.lyricsData(showSource);
   window.fl.on.settings(next => { cfg = next; syncControls(); });
   window.fl.on.pickEnded(() => refreshBounds());
+  window.fl.on.overlayBounds(b => {
+    if (!b) return;
+    bounds = b;
+    $('ovWidth').value = b.width;
+    $('ovHeight').value = b.height;
+  });
 
   $('btnHide').onclick = () => window.fl.panel.hide();
   $('btnQuit').onclick = () => window.fl.app.quit();
@@ -184,6 +265,25 @@ async function init() {
     $(id).onchange = e => set({ [key]: e.target.checked });
   }
 
+  for (const input of document.querySelectorAll('.sc-input')) {
+    input.addEventListener('focus', () => input.classList.add('capturing'));
+    input.addEventListener('blur', () => input.classList.remove('capturing'));
+    input.addEventListener('keydown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === 'Escape') { input.blur(); return; }
+      const action = input.dataset.action;
+      if (e.key === 'Backspace' || e.key === 'Delete') {
+        set({ shortcuts: { ...(cfg.shortcuts || {}), [action]: '' } });
+        return;
+      }
+      const accel = accelFromEvent(e);
+      if (!accel) { showScHint('需要至少一个修饰键，例如 Alt+L', true); return; }
+      set({ shortcuts: { ...(cfg.shortcuts || {}), [action]: accel } });
+    });
+  }
+  window.fl.on.shortcutsFailed(list => showScHint(`这些快捷键已被其他程序占用：${list.join('、')}`, true));
+
   $('btnRefetch').onclick = async () => {
     $('lyricSource').textContent = '歌词来源：重新搜索中…';
     showSource(await window.fl.lyrics.refetch());
@@ -200,22 +300,19 @@ async function init() {
   $('ovWidth').onchange = e => window.fl.overlay.bounds({ width: +e.target.value }).then(refreshBounds);
   $('ovHeight').onchange = e => window.fl.overlay.bounds({ height: +e.target.value }).then(refreshBounds);
   $('btnCenter').onclick = async () => {
-    const b = await window.fl.overlay.bounds();
-    const sw = window.screen.availWidth, sh = window.screen.availHeight;
-    await window.fl.overlay.bounds({
-      x: Math.round((sw - b.width) / 2),
-      y: Math.round(sh - b.height - 90),
-      width: b.width, height: b.height
-    });
-    refreshBounds();
+    bounds = await window.fl.overlay.center();
+    if (bounds) { $('ovWidth').value = bounds.width; $('ovHeight').value = bounds.height; }
   };
   $('btnToggleOverlay').onclick = () => window.fl.overlay.toggle();
 
-  requestAnimationFrame(tick);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopLoop(); else scheduleLoop(0);
+  });
+  scheduleLoop(0);
 }
 
 function showSource(ly) {
-  const names = { netease: '网易云', lrclib: 'LRCLIB', manual: '手动导入', none: '未找到' };
+  const names = { netease: '网易云', lrclib: 'LRCLIB', manual: '手动导入', instrumental: '纯音乐', none: '未找到' };
   const n = ly && ly.lines ? ly.lines.length : 0;
   $('lyricSource').textContent = `歌词来源：${names[ly?.source] || '—'}${n ? ` · ${n} 句` : ''}${ly?.matched ? ` · 匹配「${ly.matched}」` : ''}`;
 }

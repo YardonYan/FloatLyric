@@ -286,6 +286,23 @@ body {
 .field select:focus, .field input:focus { border-color: #4a5f96; }
 .field select option { background: #21262f; }
 
+.field input.sc-input {
+  width: 100%;
+  padding: 7px 9px;
+  border-radius: var(--r-s);
+  background: #21262f;
+  border: 1px solid #2f3542;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .04em;
+  text-align: center;
+  cursor: pointer;
+}
+
+.field input.sc-input.capturing { border-color: #6f8ff0; color: #9db4ff; }
+.field input.sc-input:focus { outline: none; border-color: #4a5f96; }
+
 .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; margin-top: 14px; }
 
 .tg { display: flex; align-items: center; gap: 8px; cursor: pointer; }

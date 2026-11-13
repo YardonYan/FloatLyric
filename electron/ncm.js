@@ -8,6 +8,8 @@ const { EventEmitter } = require('node:events');
 
 const EXTRACT = fs.readFileSync(path.join(__dirname, 'extract.js'), 'utf8');
 const POLL_MS = 100;
+const PAUSED_POLL_MS = 400;
+const IDLE_POLL_MS = 1000;
 
 function httpJson(port, route, timeout = 2500) {
   return new Promise(resolve => {
@@ -130,11 +132,18 @@ class NcmBridge extends EventEmitter {
   connect(wsUrl) {
     return new Promise((resolve, reject) => {
       let settled = false;
+      let timer = null;
       const ws = new WebSocket(wsUrl);
-      const fail = e => { if (!settled) { settled = true; reject(e instanceof Error ? e : new Error(String(e))); } };
+      const fail = e => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        reject(e instanceof Error ? e : new Error(String(e)));
+      };
       ws.addEventListener('open', () => {
         if (settled) return;
         settled = true;
+        clearTimeout(timer);
         this.ws = ws;
         this.connected = true;
         ws.addEventListener('message', ev => this.onMessage(ev.data));
@@ -143,7 +152,7 @@ class NcmBridge extends EventEmitter {
         resolve();
       });
       ws.addEventListener('error', fail);
-      setTimeout(() => fail(new Error('ws timeout')), 6000);
+      timer = setTimeout(() => fail(new Error('ws timeout')), 6000);
     });
   }
 
@@ -151,8 +160,9 @@ class NcmBridge extends EventEmitter {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
     if (msg.id && this.pending.has(msg.id)) {
-      const { resolve, reject } = this.pending.get(msg.id);
+      const { resolve, reject, timer } = this.pending.get(msg.id);
       this.pending.delete(msg.id);
+      clearTimeout(timer);
       msg.error ? reject(new Error(msg.error.message || 'cdp error')) : resolve(msg.result);
     }
   }
@@ -161,7 +171,7 @@ class NcmBridge extends EventEmitter {
     if (!this.connected) return;
     this.connected = false;
     this.ws = null;
-    for (const { reject } of this.pending.values()) reject(new Error('cdp closed'));
+    for (const { reject, timer } of this.pending.values()) { clearTimeout(timer); reject(new Error('cdp closed')); }
     this.pending.clear();
     this.emit('disconnected');
     if (!this.destroyed) setTimeout(() => this.reconnect(), 2000);
@@ -175,6 +185,9 @@ class NcmBridge extends EventEmitter {
       await this.connect(t.webSocketDebuggerUrl);
       await this.send('Runtime.enable');
       this.emit('connected');
+      // A reconnect that skips poll() leaves the bridge "connected" with a
+      // frozen lastState — the overlay then never follows the new track.
+      this.poll();
     } catch { setTimeout(() => this.reconnect(), 2500); }
   }
 
@@ -182,11 +195,11 @@ class NcmBridge extends EventEmitter {
     return new Promise((resolve, reject) => {
       if (!this.ws || this.ws.readyState !== 1) return reject(new Error('not connected'));
       const id = ++this.msgId;
-      this.pending.set(id, { resolve, reject });
-      this.ws.send(JSON.stringify({ id, method, params }));
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         if (this.pending.has(id)) { this.pending.delete(id); reject(new Error('cdp timeout')); }
       }, 8000);
+      this.pending.set(id, { resolve, reject, timer });
+      this.ws.send(JSON.stringify({ id, method, params }));
     });
   }
 
@@ -199,6 +212,7 @@ class NcmBridge extends EventEmitter {
   }
 
   async start() {
+    if (this.connected) { this.poll(); return true; }
     const t = await this.pickTarget();
     if (!t) return false;
     try {
@@ -210,10 +224,11 @@ class NcmBridge extends EventEmitter {
     } catch { return false; }
   }
 
-  poll() {
+  poll(delay = POLL_MS) {
     clearTimeout(this.timer);
     if (this.destroyed) return;
     this.timer = setTimeout(async () => {
+      let next = this.connected ? POLL_MS : IDLE_POLL_MS;
       if (this.connected && !this.busy) {
         this.busy = true;
         try {
@@ -227,15 +242,20 @@ class NcmBridge extends EventEmitter {
               this.emit('songchange', s);
             }
             this.emit('state', s);
+            // A paused player changes nothing for seconds at a time; sampling
+            // it 10 times a second just burns CPU.
+            if (!s.playing) next = PAUSED_POLL_MS;
           } else {
             this.emit('state', { ok: false, reason: s?.reason || 'no-player', at: Date.now() });
+            next = IDLE_POLL_MS;
           }
         } catch (e) {
           this.emit('error', e.message);
+          next = IDLE_POLL_MS;
         } finally { this.busy = false; }
       }
-      this.poll();
-    }, POLL_MS);
+      this.poll(next);
+    }, delay);
   }
 
   async control(action) {
@@ -252,7 +272,13 @@ class NcmBridge extends EventEmitter {
       }
       return false;
     })()`;
-    try { return await this.evaluate(expr); } catch { return false; }
+    try {
+      const ok = await this.evaluate(expr);
+      // Reflect transport changes in the UI immediately instead of waiting for
+      // the (possibly downgraded) pause polling interval.
+      if (ok) this.poll(0);
+      return ok;
+    } catch { return false; }
   }
 
   stop() {

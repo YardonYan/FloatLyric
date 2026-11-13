@@ -33,6 +33,8 @@ contextBridge.exposeInMainWorld('fl', {
   },
   overlay: {
     bounds: b => ipcRenderer.invoke('overlay:bounds', b),
+    center: () => ipcRenderer.invoke('overlay:center'),
+    setHotZones: zones => ipcRenderer.send('overlay:hot-zones', zones),
     toggle: () => ipcRenderer.invoke('overlay:toggle'),
     show: () => ipcRenderer.invoke('overlay:show')
   },
@@ -49,8 +51,11 @@ contextBridge.exposeInMainWorld('fl', {
     lyricsData: cb => on('lyrics:data', cb),
     lyricsLoading: cb => on('lyrics:loading', cb),
     settings: cb => on('settings:changed', cb),
+    shortcutsFailed: cb => on('settings:shortcutsFailed', cb),
     pickSample: cb => on('pick:sample', cb),
     pickPreview: cb => on('pick:preview', cb),
+    hot: cb => on('overlay:hot', cb),
+    overlayBounds: cb => on('overlay:boundsChanged', cb),
     pickStarted: cb => on('pick:started', cb),
     pickEnded: cb => on('pick:ended', cb)
   }

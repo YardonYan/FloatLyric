@@ -8,7 +8,7 @@
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20·%2011-blue.svg)](#known-limitations)
 [![Electron](https://img.shields.io/badge/Electron-45.3.1-47848F.svg)](package.json)
 [![Runtime deps](https://img.shields.io/badge/runtime%20deps-0-brightgreen.svg)](#how-it-works)
-[![Version](https://img.shields.io/badge/version-1.0.0-informational.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-1.1.0-informational.svg)](package.json)
 
 [中文](README.md) · **English**
 
@@ -18,7 +18,7 @@
 
 > You want to see the lyrics while working, but switching NetEase Cloud Music to the foreground is a bit loud. So let the current line stay on screen, looking much like the text around it.
 
-FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation. The default appearance is a single 22px line of dark grey text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document. When you want it clearer, colour, lightness, font size, font weight, background density and glow are all continuously adjustable from the panel. The whole strip can be dragged anywhere, locked in place, or made click-through.
+FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation. The default appearance is a single 22px line of dark grey text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document. The line is left-aligned, so a longer lyric grows to the right instead of over the content on the left, and the transparent parts of the window are click-through. When you want it clearer, colour, lightness, font size, font weight, background density and glow are all continuously adjustable from the panel. The whole strip can be dragged anywhere, locked in place, or made fully click-through.
 
 Plain Electron plus vanilla JavaScript. No native modules, no third-party runtime dependencies, and only fonts already installed on the system — no font files are distributed with the project.
 
@@ -36,6 +36,7 @@ Plain Electron plus vanilla JavaScript. No native modules, no third-party runtim
 - [Project Layout](#project-layout)
 - [Known Limitations](#known-limitations)
 - [Troubleshooting](#troubleshooting)
+- [Changelog](CHANGELOG.md)
 - [Compliance & Disclaimer](#compliance--disclaimer)
 - [Contributing](#contributing)
 - [License](#license)
@@ -71,15 +72,15 @@ Both are real runtime screenshots: the first shows the strip with its background
 
 | Capability | Detail |
 | --- | --- |
-| Playback sync | Reads client playback state every 100 ms; switches lyrics on song change |
-| Lyrics and translation | NetEase lyrics endpoint first, lrclib.net as fallback; translation line scales with the main line |
+| Playback sync | Reads client playback state every 100 ms while playing (slower when paused); switches lyrics on song change, and probes/reconnects on its own if NetEase starts later |
+| Lyrics and translation | NetEase lyrics endpoint first, lrclib.net as fallback; translation line scales with the main line; honours LRC `[offset:]` and detects instrumental placeholders |
 | Local lyrics | Import `.lrc` / `.txt` from the panel to replace the current lyrics immediately |
 | Screen eyedropper | Freezes the desktop on invocation, live preview as the pointer moves, left click to pick, right click or `Esc` to cancel |
 | Colour lightness | Adjusts perceptual lightness in OKLCH; negative is deeper, positive is lighter |
-| Typography | Font size, weight, installed system font, alignment, context lines and translation toggle |
+| Typography | Left-aligned by default, so a long line grows to the right instead of over the left side; font size, weight, installed system font, context lines and translation toggle; lines that still overflow at the minimum size scroll horizontally |
 | Strip appearance | Background density, glow, and progress bar toggle |
-| Window behaviour | Drag to move, bottom-right grip to resize, lock position, click-through, one-key show / hide |
-| Extras | Launch at login, tray menu, playback buttons, settings and lyric cache |
+| Window behaviour | Drag the lyric text to move, transparent areas are click-through, either vertical edge resizes the width, bottom-right grip resizes both dimensions, lock position, one-key show / hide, configurable shortcuts |
+| Extras | Launch at login, tray menu, playback buttons, settings and lyric cache (keyed by title/artist/duration, capped at 80 songs) |
 
 ## Quick Start
 
@@ -98,6 +99,8 @@ git clone https://github.com/YardonYan/FloatLyric.git
 cd FloatLyric
 npm install
 npm start
+npm test      # unit tests
+npm run lint  # lint
 ```
 
 On first launch nothing in the NetEase installation is modified; the app only tries to reach port 9222 on localhost. See "Connecting to NetEase Cloud Music".
@@ -108,7 +111,7 @@ Pick whichever of the three fits.
 
 ### Option 1: Portable exe
 
-For users who do not want Node.js installed. Download `FloatLyric-1.0.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` is named `浮词-1.0.0-portable.exe` by the packaging config; the contents are the same.
+For users who do not want Node.js installed. Download `FloatLyric-1.1.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
 
 One caveat: enabling launch at login registers the current exe path. If you later move the exe, toggle the switch off and back on in the panel so the registered path is refreshed.
 
@@ -162,10 +165,10 @@ The port can be changed through the `cdpPort` field in the settings file; if the
 
 | Action | How |
 | --- | --- |
-| Move the strip | Drag any empty part of the strip |
-| Resize | Drag the bottom-right grip, visible on hover |
-| Lock / unlock | Lock icon in the strip's hover toolbar, or `Alt+Shift+L`; a locked strip stays put and ignores dragging |
-| Click-through | Panel toggle; the strip stops intercepting the mouse and clicks reach the window below |
+| Move the strip | Drag the lyric text itself; the transparent rest of the window is click-through and never covers the app below |
+| Resize | Drag either vertical edge of the strip to change width, or the bottom-right grip to change width and height |
+| Lock / unlock | Lock icon in the strip's hover toolbar, or `Alt+Shift+L`; a locked strip stays put and the whole window becomes pass-through |
+| Click-through | Panel toggle; when on, even the lyrics stop intercepting the mouse (fully pass-through) |
 | Screen eyedropper | "Screen eyedropper" in the panel, or `Alt+C` |
 | Show / hide the strip | `Alt+L` |
 | Open the panel | `Alt+P`, or the tray icon |
@@ -180,7 +183,7 @@ While picking, the strip previews the colour under the pointer live; only a left
 
 <img src="assets/architecture.svg" alt="FloatLyric data flow" width="100%">
 
-In the main process, `ncm.js` opens a CDP WebSocket to the client page and evaluates the reader expression in `extract.js` every 100 ms, returning title, artist, duration and progress. A song change triggers a lyric lookup: `lyrics.js` queries the NetEase lyrics endpoint (including the translation) first and falls back to lrclib.net; results are cached per song in the settings file so switching back does not repeat the request. The UI side is three separate frameless Electron windows — the strip, the panel and the picker overlay — talking to the main process over IPC channels exposed by the preload script.
+In the main process, `ncm.js` opens a CDP WebSocket to the client page and evaluates the reader expression in `extract.js` every 100 ms while playing (400 ms while paused), returning title, artist, duration and progress. A song change triggers a lyric lookup: `lyrics.js` queries the NetEase lyrics endpoint (including the translation) first and falls back to lrclib.net; results are cached per song in the settings file so switching back does not repeat the request. The UI side is three separate frameless Electron windows — the strip, the panel and the picker overlay — talking to the main process over IPC channels exposed by the preload script.
 
 Colour picking is a separate path. A fullscreen topmost picker makes some Chromium windows count as occluded; they stop presenting frames, and a live capture reads black in that region. So the implementation grabs one desktop frame with Electron's `desktopCapturer` before the picker exists and samples that frozen frame throughout. Pointer coordinates are mapped onto the frame's pixel grid using the display scale factor, and the loupe shows a real pixel neighbourhood rather than a flat swatch. `renderer/shared/color.js` adjusts lightness in OKLCH, a colour space with a perceptual lightness axis, which avoids the hue shifts that come from editing RGB brightness directly.
 
@@ -188,7 +191,7 @@ Colour picking is a separate path. A fullscreen topmost picker makes some Chromi
 
 - Settings are stored in `%APPDATA%\浮词\settings.json`: strip position, colour, font size, window behaviour and the lyric cache, restored on restart. The repository `.gitignore` excludes this file — do not commit personal settings.
 - Lyrics come from public endpoints first, then lrclib.net; if neither has a match, import a local `.lrc` / `.txt`.
-- The cache key is title plus artist; "Re-fetch lyrics" in the panel bypasses it.
+- The cache key is title, artist and duration, so a live version cannot reuse the studio timeline; the cache keeps the 80 most recent songs. "Re-fetch lyrics" in the panel bypasses it.
 - The font dropdown lists fonts installed on the current machine, so its options vary by system. No font files are shipped.
 
 ## Project Layout
@@ -203,6 +206,9 @@ scripts/       Dev tools: CDP queries, input injection, system mouse and capture
 preview/       Static design draft of the strip
 research/      Early feasibility probes (SMTC probe, CDP extraction), not used at runtime
 tools/         Illustration generator for the README
+tests/         Unit tests on Node's built-in test runner (lyrics parsing, colour math)
+.github/       GitHub Actions: tests, lint and packaging check
+eslint.config.js  ESLint configuration
 ```
 
 `assets/hero.svg` and `assets/architecture.svg` are generated by `python tools/gen_readme_images.py` with no dependencies. To change an illustration, edit the script and regenerate — do not hand-edit the SVGs.
@@ -221,7 +227,7 @@ Each row below maps to a branch or hint that actually exists in the code. Work t
 
 | Symptom | Cause and fix |
 | --- | --- |
-| Panel shows disconnected and the tray cannot reconnect | No target page on port 9222. Click "Launch NetEase with debugging", or set `cdpPort` to match a client started on another port |
+| Panel shows disconnected while NetEase is open | FloatLyric probes port 9222 every 2 seconds, so give it a moment; if the client was started on another port, set `cdpPort` to match, or click "Launch NetEase with debugging" |
 | Still disconnected after launching in debugging mode | The probe waits up to about 20 seconds. If security software blocks the client or it starts slowly, wait until it is fully up and click "Reconnect" |
 | The NetEase executable cannot be found | Common install directories and the `DisplayIcon` value of uninstall registry entries are checked in order. For an unusual location, start the client with the debugging port yourself — FloatLyric will connect to the existing port |
 | Connected, but lyrics stay empty | Use "Re-fetch lyrics" to bypass the cache; if still empty, import a local `.lrc` / `.txt` |

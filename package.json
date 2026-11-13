@@ -1,7 +1,7 @@
 {
   "name": "floatlyric",
   "productName": "浮词",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "跟随网易云音乐的桌面悬浮歌词，支持屏幕取色针与字号调节",
   "main": "electron/main.js",
   "author": "YardonYan",
@@ -16,12 +16,16 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
+    "test": "node --test \"tests/*.test.js\"",
+    "lint": "eslint electron renderer tests",
     "dist": "electron-builder --win portable",
     "dist:dir": "electron-builder --win --dir"
   },
   "devDependencies": {
     "electron": "45.3.1",
-    "electron-builder": "26.18.0"
+    "electron-builder": "26.18.0",
+    "eslint": "^9.0.0",
+    "globals": "^15.0.0"
   },
   "build": {
     "appId": "top.yardon.floatlyric",
@@ -44,7 +48,7 @@
       "artifactName": "FloatLyric-${version}.${ext}"
     },
     "portable": {
-      "artifactName": "浮词-${version}-portable.${ext}"
+      "artifactName": "FloatLyric-${version}-portable.${ext}"
     }
   }
 }

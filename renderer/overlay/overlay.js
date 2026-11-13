@@ -1,7 +1,7 @@
 'use strict';
 
 const $ = id => document.getElementById(id);
-const stage = $('stage'), pane = $('pane'), lineEl = $('line'), trEl = $('tr');
+const pane = $('pane'), lineEl = $('line'), trEl = $('tr');
 const ctxPrev = $('ctxPrev'), ctxNext = $('ctxNext'), idleText = $('idleText');
 const progressFill = $('progressFill');
 
@@ -12,6 +12,9 @@ let netAt = 0;             // performance.now() when it arrived
 let idx = -1;
 let previewHex = null;
 let offsetMs = 0;
+let stale = false;
+let staleTimer = null;
+let lastSwitchAt = 0;
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -71,6 +74,11 @@ function applyTheme() {
   document.body.classList.toggle('show-progress', cfg.showProgressBar !== false);
   document.body.classList.toggle('is-locked', !!cfg.locked);
   $('btnLock').classList.toggle('on', !!cfg.locked);
+
+  const sc = cfg.shortcuts || {};
+  $('btnPick').title = `屏幕取色针 (${sc.pick || 'Alt+C'})`;
+  $('btnPanel').title = `控制面板 (${sc.panel || 'Alt+P'})`;
+  $('btnLock').title = `锁定位置 (${sc.lock || 'Alt+Shift+L'})`;
 }
 
 function positionNow() {
@@ -96,8 +104,23 @@ function fit() {
   main.style.setProperty('--fit', '1');
   const avail = pane.clientWidth - 40;
   if (avail <= 40) return;
-  const w = Math.max(lineEl.scrollWidth, trEl.scrollWidth);
-  if (w > avail) main.style.setProperty('--fit', String(Math.max(0.42, avail / w)));
+  const lineW = lineEl.scrollWidth;
+  const w = Math.max(lineW, trEl.scrollWidth);
+  let scale = 1;
+  if (w > avail) {
+    scale = Math.max(0.42, avail / w);
+    main.style.setProperty('--fit', String(scale));
+  }
+  // Past the 0.42 floor the line is still wider than the pane. Slide it rather
+  // than shrivelling the type further, which would be unreadable.
+  const overflow = Math.ceil(lineW * scale - avail);
+  const marquee = overflow > 2;
+  main.classList.toggle('is-marquee', marquee);
+  if (marquee) {
+    lineEl.style.setProperty('--marquee-x', `-${overflow}px`);
+    lineEl.style.setProperty('--marquee-dur', `${Math.max(6, Math.round(overflow / 30))}s`);
+  }
+  queueHotZones();
 }
 
 function renderLine(i, animate) {
@@ -135,40 +158,87 @@ function renderLine(i, animate) {
     ctxNext.textContent = '';
   }
 
-  requestAnimationFrame(fit);
+  // Apply the fit in the same frame. A deferred fit paints one frame of the
+  // unscaled line first, which reads as a size blink on every line change.
+  fit();
 }
 
 function setIdle(msg) {
   document.body.classList.add('is-idle');
   idleText.textContent = msg;
+  queueHotZones();
+}
+
+// Idle states do not need 60fps: pause the lyric clock to a few frames a
+// second, and stop entirely while the window is hidden.
+const IDLE_FRAME_MS = 400;
+const PAUSED_FRAME_MS = 250;
+let frameTimer = null;
+let frameRaf = null;
+
+function stopLoop() {
+  if (frameTimer) { clearTimeout(frameTimer); frameTimer = null; }
+  if (frameRaf) { cancelAnimationFrame(frameRaf); frameRaf = null; }
+}
+
+function scheduleLoop(delay) {
+  stopLoop();
+  if (document.hidden) return;
+  if (delay > 0) {
+    frameTimer = setTimeout(() => {
+      frameTimer = null;
+      frameRaf = requestAnimationFrame(tick);
+    }, delay);
+  } else {
+    frameRaf = requestAnimationFrame(tick);
+  }
 }
 
 function tick() {
+  frameRaf = null;
+  let delay = 0;
   if (!net || !net.ok) {
     if (!document.body.classList.contains('is-idle')) setIdle('等待网易云播放');
-    requestAnimationFrame(tick);
-    return;
-  }
-  const t = positionNow();
-  if (net.duration) {
-    progressFill.style.width = (clamp(t / net.duration, 0, 1) * 100).toFixed(2) + '%';
-  }
+    delay = IDLE_FRAME_MS;
+  } else {
+    const t = positionNow();
+    if (net.duration) {
+      progressFill.style.width = (clamp(t / net.duration, 0, 1) * 100).toFixed(2) + '%';
+    }
 
-  if (!lyrics.lines.length) {
-    const msg = lyrics.source === 'loading' ? '正在找歌词…' : '这首歌没有歌词';
-    if (idleText.textContent !== msg || !document.body.classList.contains('is-idle')) setIdle(msg);
-    requestAnimationFrame(tick);
-    return;
+    if (!lyrics.lines.length) {
+      const msg = lyrics.source === 'loading' ? '正在找歌词…'
+        : lyrics.source === 'instrumental' ? '纯音乐，请欣赏'
+          : '这首歌没有歌词';
+      if (idleText.textContent !== msg || !document.body.classList.contains('is-idle')) setIdle(msg);
+      delay = IDLE_FRAME_MS;
+    } else if (stale) {
+      // Waiting for the new song's lyrics; keep the last line on screen rather
+      // than blanking the strip for the length of a network round-trip.
+      delay = net.playing ? 0 : PAUSED_FRAME_MS;
+    } else {
+      // While the idle layer was up the lyric block was display:none, so any
+      // fit measured during that time was 0. Re-measure on the way back.
+      const wasIdle = document.body.classList.contains('is-idle');
+      document.body.classList.remove('is-idle');
+      if (wasIdle) fit();
+      const i = lineAt(t);
+      if (i !== idx) {
+        const now = performance.now();
+        // A one-line hop back right after a switch is sampling noise around the
+        // boundary; replaying the enter animation there looks like a blink.
+        const backtrack = idx > 0 && i < idx && now - lastSwitchAt < 600;
+        if (!backtrack) {
+          const first = idx === -1;
+          idx = i;
+          lastSwitchAt = now;
+          renderLine(i, !first);
+        }
+      }
+      delay = net.playing ? 0 : PAUSED_FRAME_MS;
+    }
   }
-
-  document.body.classList.remove('is-idle');
-  const i = lineAt(t);
-  if (i !== idx) {
-    const first = idx === -1;
-    idx = i;
-    renderLine(i, !first);
-  }
-  requestAnimationFrame(tick);
+  scheduleLoop(delay);
 }
 
 function ingestState(s) {
@@ -178,6 +248,8 @@ function ingestState(s) {
 }
 
 function ingestLyrics(r) {
+  clearTimeout(staleTimer);
+  stale = false;
   lyrics = r && Array.isArray(r.lines) ? r : { lines: [], source: 'none' };
   idx = -1;
   renderLine(lineAt(positionNow()), false);
@@ -197,12 +269,27 @@ async function init() {
 
   window.fl.on.ncmState(ingestState);
   window.fl.on.lyricsData(ingestLyrics);
-  window.fl.on.lyricsLoading(() => { lyrics = { lines: [], source: 'loading' }; idx = -1; });
+  window.fl.on.lyricsLoading(() => {
+    clearTimeout(staleTimer);
+    if (lyrics.lines.length) {
+      stale = true;
+      // If the lookup never answers, fall back to the normal empty state.
+      staleTimer = setTimeout(() => {
+        stale = false;
+        lyrics = { lines: [], source: 'none' };
+        idx = -1;
+      }, 6000);
+      return;
+    }
+    lyrics = { lines: [], source: 'loading' };
+    idx = -1;
+  });
   window.fl.on.settings(next => {
     const refit = next.fontSize !== cfg.fontSize || next.showTranslation !== cfg.showTranslation;
     cfg = next;
     offsetMs = next.offsetMs || 0;
     applyTheme();
+    queueHotZones();
     if (refit) { idx = -1; renderLine(lineAt(positionNow()), false); }
   });
   window.fl.on.pickPreview(p => {
@@ -219,8 +306,76 @@ async function init() {
   $('btnLock').onclick = () => window.fl.settings.set({ locked: !cfg.locked });
 
   wireGrip();
+  wireEdges();
   window.addEventListener('resize', () => requestAnimationFrame(fit));
-  requestAnimationFrame(tick);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) stopLoop(); else scheduleLoop(0);
+  });
+  window.fl.on.hot(on => document.body.classList.toggle('is-hot', !!on));
+  queueHotZones();
+  scheduleLoop(0);
+}
+
+// Only the lyric text (plus the small HUD / resize grip) is a mouse target.
+// The boxes are reported window-local to the main process, which polls the
+// cursor and toggles the window's hit-testing.
+function hotRects() {
+  if (!cfg || cfg.clickThrough || cfg.locked) return [];
+  return [lineEl, trEl, $('idleText'), $('hud'), $('grip'), $('edgeLeft'), $('edgeRight')]
+    .map(el => el.getBoundingClientRect())
+    .filter(r => r.width > 0 && r.height > 0);
+}
+
+let hotReportPending = false;
+
+function reportHotZones() {
+  const zones = hotRects().map(r => ({
+    x: Math.round(r.left), y: Math.round(r.top),
+    w: Math.round(r.width), h: Math.round(r.height)
+  }));
+  window.fl.overlay.setHotZones(zones);
+}
+
+function queueHotZones() {
+  if (hotReportPending) return;
+  hotReportPending = true;
+  requestAnimationFrame(() => {
+    hotReportPending = false;
+    reportHotZones();
+  });
+}
+
+function wireEdges() {
+  // Drag either vertical edge to change the strip width. The left edge keeps
+  // the right edge anchored, the right edge keeps the left edge anchored.
+  for (const [el, side] of [[$('edgeLeft'), 'left'], [$('edgeRight'), 'right']]) {
+    let start = null;
+    el.addEventListener('pointerdown', async e => {
+      if (e.button !== 0 || !cfg || cfg.locked || cfg.clickThrough) return;
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      const b = await window.fl.overlay.bounds();
+      start = { sx: e.screenX, x: b.x, w: b.width };
+    });
+    el.addEventListener('pointermove', e => {
+      if (!start) return;
+      const dx = e.screenX - start.sx;
+      if (!dx) return;
+      if (side === 'right') {
+        window.fl.overlay.bounds({ width: clamp(start.w + dx, 280, 3000) });
+      } else {
+        const w = clamp(start.w - dx, 280, 3000);
+        window.fl.overlay.bounds({ x: Math.round(start.x + start.w - w), width: w });
+      }
+    });
+    const end = e => {
+      start = null;
+      if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      queueHotZones();
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+  }
 }
 
 function wireGrip() {

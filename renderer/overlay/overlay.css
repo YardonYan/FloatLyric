@@ -9,7 +9,6 @@ html, body {
   width: 100%;
   height: 100%;
   padding: 6px;
-  -webkit-app-region: drag;
 }
 
 /* The pane is a lit dark, not a hole: a top-weighted radial lift over a
@@ -62,23 +61,27 @@ html, body {
   inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* Left-aligned: the strip keeps its left edge fixed, so a long line grows to
+     the right instead of spreading over whatever sits on the left. */
+  align-items: flex-start;
   justify-content: center;
   gap: .18em;
   padding: 12px 18px 10px;
-  text-align: center;
+  text-align: left;
   pointer-events: none;
 }
 
 .main {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: .22em;
   max-width: 100%;
+  width: 100%;
 }
 
 .line {
+  position: relative;
   font-size: calc(var(--fs) * var(--fit, 1));
   font-weight: var(--fw, 600);
   line-height: 1.34;
@@ -90,13 +93,42 @@ html, body {
   max-width: 100%;
   text-shadow: var(--halo);
   transition: color .18s linear;
+  /* Only the glyph box is a mouse target, and it is also the drag handle. */
+  pointer-events: auto;
+  user-select: none;
+  -webkit-app-region: drag;
 }
 
 .line.enter { animation: lineIn var(--dur, 420ms) cubic-bezier(.22, .68, .28, 1) both; }
 
+/* A line that still overflows at the minimum type size slides horizontally.
+   `left` is animated (not transform) so it can run together with lineIn. */
+.main.is-marquee { align-items: flex-start; width: 100%; }
+.main.is-marquee .line {
+  max-width: none;
+  animation: marqueeSlide var(--marquee-dur, 8s) ease-in-out infinite alternate;
+}
+.main.is-marquee .line.enter {
+  animation:
+    lineIn var(--dur, 420ms) cubic-bezier(.22, .68, .28, 1) both,
+    marqueeSlide var(--marquee-dur, 8s) ease-in-out infinite alternate;
+}
+.main.is-marquee .tr { align-self: flex-start; }
+.main.is-marquee .tr.enter {
+  animation:
+    lineIn var(--dur, 420ms) cubic-bezier(.22, .68, .28, 1) both;
+}
+
+@keyframes marqueeSlide {
+  from { left: 0; }
+  to   { left: var(--marquee-x, 0px); }
+}
+
+/* Kept deliberately small: on a transparent window a blur/translate entrance
+   can read as a blink, especially when lines change quickly. */
 @keyframes lineIn {
-  from { opacity: 0; transform: translate3d(0, .34em, 0); filter: blur(3px); }
-  to   { opacity: 1; transform: none; filter: blur(0); }
+  from { opacity: 0; transform: translate3d(0, .2em, 0); }
+  to   { opacity: 1; transform: none; }
 }
 
 .tr {
@@ -109,6 +141,9 @@ html, body {
   white-space: nowrap;
   max-width: 100%;
   text-shadow: var(--halo-soft);
+  pointer-events: auto;
+  user-select: none;
+  -webkit-app-region: drag;
 }
 
 .tr:empty { display: none; }
@@ -124,6 +159,7 @@ html, body {
   text-overflow: ellipsis;
   max-width: 92%;
   text-shadow: var(--halo-soft);
+  text-align: left;
 }
 
 .ctx:empty { display: none; }
@@ -143,6 +179,8 @@ body:not(.show-ctx) .ctx { display: none; }
   text-shadow: var(--halo-soft);
   pointer-events: none;
 }
+
+.idle-text { pointer-events: auto; user-select: none; -webkit-app-region: drag; }
 
 body.is-idle .idle { display: flex; }
 body.is-idle .lyric { display: none; }
@@ -173,11 +211,11 @@ body.is-idle .lyric { display: none; }
   opacity: 0;
   transform: translate3d(0, -4px, 0);
   transition: opacity .18s ease, transform .18s ease;
-  -webkit-app-region: no-drag;
-  backdrop-filter: blur(9px);
 }
 
-.pane:hover .hud, .hud:focus-within { opacity: 1; transform: none; }
+/* Hover chrome only appears while the pointer is actually on the text or the
+   toolbar itself; the rest of the window is click-through. */
+body.is-hot .hud, .hud:focus-within { opacity: 1; transform: none; }
 body.is-locked .hud { opacity: 0; pointer-events: none; }
 
 .hud-btn {
@@ -222,7 +260,6 @@ body:not(.show-progress) .progress { display: none; }
   width: 16px;
   height: 16px;
   cursor: nwse-resize;
-  -webkit-app-region: no-drag;
   opacity: 0;
   transition: opacity .18s ease;
 }
@@ -239,7 +276,23 @@ body:not(.show-progress) .progress { display: none; }
   border-radius: 0 0 3px 0;
 }
 
-.pane:hover .grip { opacity: .8; }
+body.is-hot .grip { opacity: .8; }
 body.is-locked .grip { display: none; }
+
+/* Left/right edges resize the strip horizontally. They sit at the very border
+   so the transparent middle stays click-through. */
+.edge {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  z-index: 20;
+  cursor: ew-resize;
+  background: transparent;
+}
+
+.edge.left { left: 0; }
+.edge.right { right: 0; }
+body.is-locked .edge { display: none; }
 
 body.is-picking .pane { opacity: 1; }

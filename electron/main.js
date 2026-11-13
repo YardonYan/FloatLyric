@@ -5,7 +5,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 const settings = require('./settings');
-const { NcmBridge } = require('./ncm');
+const { NcmBridge, isNcmRunning } = require('./ncm');
 const { fetchLyrics, parseLrc, clean } = require('./lyrics');
 const eyedropper = require('./eyedropper');
 const { log, attach } = require('./log');
@@ -22,6 +22,16 @@ let currentLyrics = { lines: [], source: 'none' };
 let currentSong = null;
 let lyricRequest = 0;
 let ncmStatus = { phase: 'idle', detail: '' };
+let connecting = false;
+let retryBusy = false;
+let autoRetryTimer = null;
+let lastProcessCheck = 0;
+let pointerTimer = null;
+let hotZones = [];
+let hot = false;
+
+// Phases where nothing is in flight and a probe is worth trying again.
+const AUTO_PHASES = new Set(['idle', 'not-running', 'needs-restart', 'error']);
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -47,15 +57,21 @@ function boot() {
       bridge = new NcmBridge(settings.get().cdpPort);
       wireBridge();
       await tryConnect();
+      startAutoReconnect();
+      startPointerWatch();
       log('boot done', ncmStatus);
     } catch (err) {
       log('BOOT ERROR', err && err.stack || String(err));
     }
   }).catch(err => log('READY ERROR', err && err.stack || String(err)));
 
-  app.on('window-all-closed', e => e.preventDefault());
+  // The window-all-closed event carries no event object; subscribing at all is
+  // enough to keep the app alive when the last window goes away.
+  app.on('window-all-closed', () => {});
   app.on('before-quit', () => {
     settings.flush();
+    clearInterval(autoRetryTimer);
+    clearInterval(pointerTimer);
     bridge?.stop();
     stopPick(false);
     globalShortcut.unregisterAll();
@@ -73,7 +89,20 @@ function wireBridge() {
     ncmStatus = { phase: 'reconnecting', detail: '' };
     broadcast('ncm:status', ncmStatus);
   });
-  bridge.on('state', s => broadcast('ncm:state', s));
+  // While switching tracks the client occasionally reports a hidden slider for
+  // one sample; forwarding that would blank the strip for a frame (a visible
+  // flicker). Hold the last good state through short misses.
+  let lastGoodAt = 0;
+  let lastGoodSeen = false;
+  bridge.on('state', s => {
+    if (s && s.ok) {
+      lastGoodSeen = true;
+      lastGoodAt = Date.now();
+    } else if (lastGoodSeen && Date.now() - lastGoodAt < 1500) {
+      return;
+    }
+    broadcast('ncm:state', s);
+  });
   bridge.on('songchange', s => {
     log('songchange', s.title, s.artist, s.duration);
     currentSong = { title: s.title, artist: s.artist, duration: s.duration, cover: s.cover };
@@ -83,19 +112,134 @@ function wireBridge() {
 }
 
 async function tryConnect() {
-  ncmStatus = { phase: 'probing', detail: '' };
-  broadcast('ncm:status', ncmStatus);
-  const ok = await bridge.start();
-  if (ok) {
-    ncmStatus = { phase: 'connected', detail: '' };
-  } else {
-    const running = await require('./ncm').isNcmRunning();
-    ncmStatus = {
-      phase: running ? 'needs-restart' : 'not-running',
-      detail: running ? '网易云已在运行，但未开启调试端口' : '网易云未运行'
-    };
+  if (connecting) return;
+  connecting = true;
+  try {
+    ncmStatus = { phase: 'probing', detail: '' };
+    broadcast('ncm:status', ncmStatus);
+    const ok = await bridge.start();
+    if (ok) {
+      ncmStatus = { phase: 'connected', detail: '' };
+    } else {
+      const running = await isNcmRunning();
+      lastProcessCheck = Date.now();
+      ncmStatus = {
+        phase: running ? 'needs-restart' : 'not-running',
+        detail: running ? '网易云已在运行，但未开启调试端口' : '网易云未运行'
+      };
+    }
+  } finally {
+    connecting = false;
+    broadcast('ncm:status', ncmStatus);
   }
-  broadcast('ncm:status', ncmStatus);
+}
+
+// The client is often started after the overlay. Keep a cheap probe running so
+// the overlay attaches on its own instead of sitting on "未连接" until the user
+// finds the reconnect button.
+function startAutoReconnect() {
+  clearInterval(autoRetryTimer);
+  autoRetryTimer = setInterval(autoRetry, 2000);
+}
+
+// Polling the cursor is the only reliable hit-test here: on Windows the
+// `forward` option stops delivering moves once the window starts ignoring the
+// mouse, so after the first exit the pointer could never come back.
+const HOT_PAD = 10;
+
+function setHot(on) {
+  if (on === hot) return;
+  hot = on;
+  if (!overlay || overlay.isDestroyed()) return;
+  overlay.setIgnoreMouseEvents(!on, { forward: true });
+  try { overlay.webContents.send('overlay:hot', on); } catch {}
+}
+
+function resetHot() {
+  hot = false;
+  if (!overlay || overlay.isDestroyed()) return;
+  overlay.setIgnoreMouseEvents(true, { forward: true });
+  try { overlay.webContents.send('overlay:hot', false); } catch {}
+}
+
+function startPointerWatch() {
+  clearInterval(pointerTimer);
+  pointerTimer = setInterval(() => {
+    if (!overlay || overlay.isDestroyed() || !overlay.isVisible()) {
+      setHot(false);
+      return;
+    }
+    const cfg = settings.get();
+    if (cfg.clickThrough || cfg.locked) {
+      setHot(false);
+      return;
+    }
+    const b = overlay.getContentBounds();
+    const pt = screen.getCursorScreenPoint();
+    const x = pt.x - b.x;
+    const y = pt.y - b.y;
+    const inside = x >= 0 && y >= 0 && x <= b.width && y <= b.height;
+    const hit = inside && hotZones.some(z =>
+      x >= z.x - HOT_PAD && x <= z.x + z.w + HOT_PAD &&
+      y >= z.y - HOT_PAD && y <= z.y + z.h + HOT_PAD);
+    setHot(hit);
+  }, 50);
+}
+
+async function autoRetry() {
+  if (retryBusy || connecting || !bridge) return;
+  if (!AUTO_PHASES.has(ncmStatus.phase)) return;
+  retryBusy = true;
+  try {
+    const targets = await bridge.probe();
+    if (targets && targets.length) {
+      const ok = await bridge.start();
+      if (ok) {
+        ncmStatus = { phase: 'connected', detail: '' };
+        broadcast('ncm:status', ncmStatus);
+      }
+      return;
+    }
+    // Process lookup spawns PowerShell-free tasklist each time; keep it rare.
+    if (Date.now() - lastProcessCheck < 15000) return;
+    lastProcessCheck = Date.now();
+    const running = await isNcmRunning();
+    const next = running
+      ? { phase: 'needs-restart', detail: '网易云已在运行，但未开启调试端口' }
+      : { phase: 'not-running', detail: '网易云未运行' };
+    if (next.phase !== ncmStatus.phase) {
+      ncmStatus = next;
+      broadcast('ncm:status', next);
+    }
+  } catch (err) {
+    log('auto reconnect error', err && err.message || err);
+  } finally {
+    retryBusy = false;
+  }
+}
+
+// Cache key includes duration so a live/remix with the same title and artist
+// does not inherit the studio version's timeline.
+function songKey(song) {
+  const d = song && song.duration ? Math.round(song.duration) : '';
+  return `${song.title}|${song.artist}|${d}`;
+}
+const legacySongKey = song => `${song.title}|${song.artist}`;
+const MAX_CACHE_SONGS = 80;
+
+function cacheLyric(key, value) {
+  const cache = { ...(settings.get().lyricCache || {}) };
+  delete cache[key];
+  cache[key] = value;
+  const keys = Object.keys(cache);
+  if (keys.length > MAX_CACHE_SONGS) {
+    for (const k of keys.slice(0, keys.length - MAX_CACHE_SONGS)) delete cache[k];
+  }
+  settings.set({ lyricCache: cache });
+}
+
+function hasLyric(value) {
+  return !!value && (Array.isArray(value.lines) && value.lines.length > 0 || value.source === 'instrumental');
 }
 
 async function loadLyrics(song) {
@@ -103,10 +247,13 @@ async function loadLyrics(song) {
   broadcast('lyrics:loading', { title: song.title });
 
   const cache = settings.get().lyricCache || {};
-  const key = `${song.title}|${song.artist}`;
-  if (cache[key] && Array.isArray(cache[key].lines) && cache[key].lines.length) {
-    log('lyrics cache hit', key, cache[key].lines.length);
-    currentLyrics = cache[key];
+  const key = songKey(song);
+  const legacy = legacySongKey(song);
+  const hit = cache[key] || cache[legacy];
+  if (hasLyric(hit)) {
+    log('lyrics cache hit', key, hit.lines ? hit.lines.length : hit.source);
+    if (!cache[key]) cacheLyric(key, hit);
+    currentLyrics = { lines: hit.lines || [], source: hit.source, matched: hit.matched, matchedArtist: hit.matchedArtist };
     broadcast('lyrics:data', currentLyrics);
     return;
   }
@@ -114,6 +261,13 @@ async function loadLyrics(song) {
   let r;
   try {
     r = await fetchLyrics(song.title, song.artist, song.duration);
+    // One quiet retry: a dropped request should not read as "no lyrics".
+    if (r.source === 'none' && req === lyricRequest) {
+      await new Promise(res => setTimeout(res, 2000));
+      if (req !== lyricRequest) return;
+      const retry = await fetchLyrics(song.title, song.artist, song.duration);
+      if (retry.source !== 'none') r = retry;
+    }
   } catch (err) {
     log('LYRICS FETCH ERROR', err && err.stack || String(err));
     r = { lines: [], source: 'none' };
@@ -122,12 +276,13 @@ async function loadLyrics(song) {
   log('lyrics loaded', song.title, r.source, r.lines.length);
   currentLyrics = r;
   broadcast('lyrics:data', r);
-  if (r.lines.length) {
-    const next = { ...cache };
-    const keys = Object.keys(next);
-    if (keys.length > 60) for (const k of keys.slice(0, keys.length - 60)) delete next[k];
-    next[key] = { lines: r.lines, source: r.source };
-    settings.set({ lyricCache: next });
+  if (r.lines.length || r.source === 'instrumental') {
+    cacheLyric(key, {
+      lines: r.lines || [],
+      source: r.source,
+      matched: r.matched,
+      matchedArtist: r.matchedArtist
+    });
   }
 }
 
@@ -175,13 +330,20 @@ function createOverlay() {
   overlay.on('moved', persistOverlay);
   overlay.on('resized', persistOverlay);
   overlay.on('closed', () => { overlay = null; });
-  if (s.clickThrough) overlay.setIgnoreMouseEvents(true, { forward: true });
+  // The strip is mostly empty space. Start in pass-through mode; the renderer
+  // flips interaction on only while the pointer is over the text or HUD.
+  overlay.setIgnoreMouseEvents(true, { forward: true });
   if (s.locked) overlay.setMovable(false);
 }
 
 function persistOverlay() {
   if (!overlay || overlay.isDestroyed()) return;
-  settings.set({ overlayBounds: overlay.getBounds() });
+  const b = overlay.getBounds();
+  settings.set({ overlayBounds: b });
+  // Keep the panel's width/height fields in sync while the edge is dragged.
+  for (const w of [panel, picker]) {
+    if (w && !w.isDestroyed()) w.webContents.send('overlay:boundsChanged', b);
+  }
 }
 
 function createPanel() {
@@ -247,16 +409,33 @@ function createTray() {
   tray.on('click', showPanel);
 }
 
+function toggleOverlay() {
+  if (!overlay || overlay.isDestroyed()) return;
+  overlay.isVisible() ? overlay.hide() : overlay.show();
+}
+
+function toggleLock() {
+  const locked = !settings.get().locked;
+  settings.set({ locked });
+  broadcast('settings:changed', settings.get());
+}
+
+// Returns the accelerators that Windows refused (already taken by another app).
 function registerShortcuts() {
-  const safe = (accel, fn) => { try { globalShortcut.register(accel, fn); } catch {} };
-  safe('Alt+L', () => { if (overlay) overlay.isVisible() ? overlay.hide() : overlay.show(); });
-  safe('Alt+P', showPanel);
-  safe('Alt+C', () => startPick());
-  safe('Alt+Shift+L', () => {
-    const locked = !settings.get().locked;
-    settings.set({ locked });
-    broadcast('settings:changed', settings.get());
-  });
+  globalShortcut.unregisterAll();
+  const sc = settings.get().shortcuts || {};
+  const failed = [];
+  const bind = (accel, fn) => {
+    if (!accel) return;
+    let ok = false;
+    try { ok = globalShortcut.register(accel, fn); } catch { ok = false; }
+    if (!ok) failed.push(accel);
+  };
+  bind(sc.toggle, toggleOverlay);
+  bind(sc.panel, showPanel);
+  bind(sc.pick, () => startPick());
+  bind(sc.lock, toggleLock);
+  return failed;
 }
 
 async function launchNcm() {
@@ -281,7 +460,6 @@ async function startPick() {
   pickPrevColor = settings.get().baseColor;
   await eyedropper.freeze();
 
-  const display = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
   const all = screen.getAllDisplays();
   const minX = Math.min(...all.map(d => d.bounds.x));
   const minY = Math.min(...all.map(d => d.bounds.y));
@@ -308,7 +486,6 @@ async function startPick() {
     loopPick();
   });
   picker.on('closed', () => { picker = null; });
-  void display;
 }
 
 function loopPick() {
@@ -347,6 +524,10 @@ function registerIpc() {
   ipcMain.handle('settings:set', (_e, patch) => {
     const next = settings.set(patch);
     applyLiveSettings(next, patch);
+    if ('shortcuts' in patch) {
+      const failed = registerShortcuts();
+      if (failed.length) broadcast('settings:shortcutsFailed', failed);
+    }
     broadcast('settings:changed', next);
     return next;
   });
@@ -361,7 +542,8 @@ function registerIpc() {
   ipcMain.handle('lyrics:refetch', async () => {
     if (!currentSong) return currentLyrics;
     const cache = { ...settings.get().lyricCache };
-    delete cache[`${currentSong.title}|${currentSong.artist}`];
+    delete cache[songKey(currentSong)];
+    delete cache[legacySongKey(currentSong)];
     settings.set({ lyricCache: cache });
     await loadLyrics(currentSong);
     return currentLyrics;
@@ -395,12 +577,48 @@ function registerIpc() {
     }
     return overlay.getBounds();
   });
+  // Renderer reports the boxes (window-local) that should accept the mouse:
+  // the lyric text, the toolbar and the resize grip. Everything else must let
+  // clicks fall through to the window below.
+  ipcMain.on('overlay:hot-zones', (_e, zones) => {
+    hotZones = Array.isArray(zones)
+      ? zones.slice(0, 8).map(z => ({
+        x: Number(z.x) || 0, y: Number(z.y) || 0,
+        w: Number(z.w) || 0, h: Number(z.h) || 0
+      })).filter(z => z.w > 0 && z.h > 0)
+      : [];
+  });
+
+  ipcMain.handle('overlay:center', () => {
+    if (!overlay || overlay.isDestroyed()) return null;
+    const b = overlay.getBounds();
+    // Center on the display the overlay actually lives on, not the primary one.
+    const wa = screen.getDisplayMatching(b).workArea;
+    overlay.setBounds({
+      x: Math.round(wa.x + (wa.width - b.width) / 2),
+      y: Math.round(wa.y + wa.height - b.height - 90),
+      width: b.width,
+      height: b.height
+    });
+    persistOverlay();
+    return overlay.getBounds();
+  });
   ipcMain.handle('overlay:toggle', () => {
     if (!overlay) return false;
-    overlay.isVisible() ? overlay.hide() : overlay.show();
+    if (overlay.isVisible()) {
+      overlay.hide();
+      resetHot();
+    } else {
+      overlay.show();
+      resetHot();
+    }
     return overlay.isVisible();
   });
-  ipcMain.handle('overlay:show', () => { overlay?.show(); return true; });
+  ipcMain.handle('overlay:show', () => {
+    overlay?.show();
+    resetHot();
+    return true;
+  });
   ipcMain.handle('panel:show', () => { showPanel(); return true; });
   ipcMain.handle('panel:hide', () => { panel?.hide(); return true; });
   ipcMain.handle('app:quit', () => { app.quit(); });
@@ -424,7 +642,10 @@ function registerIpc() {
 function applyLiveSettings(next, patch) {
   if (!overlay || overlay.isDestroyed()) return;
   if ('clickThrough' in patch) {
-    overlay.setIgnoreMouseEvents(!!next.clickThrough, { forward: true });
+    // Full pass-through when enabled; otherwise the renderer re-enables the
+    // window only over the text. Either way start from pass-through and let the
+    // pointer decide.
+    overlay.setIgnoreMouseEvents(true, { forward: true });
   }
   if ('locked' in patch) overlay.setMovable(!next.locked);
   if ('autoLaunch' in patch) {

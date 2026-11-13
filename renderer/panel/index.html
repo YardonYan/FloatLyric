@@ -184,7 +184,30 @@
         <button class="btn" id="btnCenter">移到屏幕底部居中</button>
         <button class="btn ghost" id="btnToggleOverlay">显示 / 隐藏歌词</button>
       </div>
-      <p class="fine">拖动歌词栏可移动位置，右下角可拉伸大小。快捷键：Alt+L 显隐歌词，Alt+P 面板，Alt+C 取色，Alt+Shift+L 锁定。</p>
+      <p class="fine">拖动歌词文字即可移动位置；拖窗口左右边缘调整宽度，拖右下角手柄同时调整宽高。窗口其余透明区域不拦截鼠标，点击会落到下层窗口；只有歌词、工具条、边缘与手柄可交互。快捷键可在下方自定义。</p>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>快捷键</h2></div>
+      <div class="grid2">
+        <div class="field">
+          <label for="scToggle">显示 / 隐藏歌词</label>
+          <input type="text" id="scToggle" class="sc-input" data-action="toggle" readonly>
+        </div>
+        <div class="field">
+          <label for="scPanel">打开控制面板</label>
+          <input type="text" id="scPanel" class="sc-input" data-action="panel" readonly>
+        </div>
+        <div class="field">
+          <label for="scPick">屏幕取色针</label>
+          <input type="text" id="scPick" class="sc-input" data-action="pick" readonly>
+        </div>
+        <div class="field">
+          <label for="scLock">锁定 / 解锁位置</label>
+          <input type="text" id="scLock" class="sc-input" data-action="lock" readonly>
+        </div>
+      </div>
+      <p class="fine" id="scHint">点击输入框后按下新的组合键（需含 Alt / Ctrl / Shift），Esc 取消。留空表示不注册。</p>
     </section>
   </div>
 

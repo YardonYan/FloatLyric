@@ -39,17 +39,18 @@ async function getJson(url, headers) {
 // Credits are enumerated endlessly by NetEase (录音工程 / 混音助理 / 合声编写 ...),
 // so match on structure — a short role label followed by a colon — plus a
 // leading-run rule, rather than trying to list every job title.
+// The run rule is deliberately not "any short label": an opening lyric like
+// "她说：别回头" is punctuation, not a credit.
 const ROLE_WORD = /(作词|作曲|编曲|词曲|词|曲|制作|出品|联合出品|发行|监制|策划|统筹|企划|宣发|营销|版权|混音|母带|录音|和声|合声|弦乐|管乐|打击乐|吉他|贝斯|鼓|键盘|编程|程序|乐手|演唱|演奏|伴奏|封面|设计|摄影|造型|化妆|导演|工作室|录音室|工程|助理|编写|后期|团队|公司|室|方)/;
 const LABEL_VALUE = /^\s*([^：:]{1,18})[：:]\s*\S/;
 const EN_CREDIT = /^\s*(lyricist|composer|arranger|producer|mixing|mastering|recording|studio|label|publisher|vocals?|guitar|bass|drums?|strings|programmer|programming|executive producer|a&r)\s*[:：]/i;
 const HEADER = /^\s*.{1,60}\s*[-–—]\s*.{1,60}\s*(?:[（(].{1,40}[)）])?\s*$/;
 
-function isCredit(text, t, leading) {
+function isCredit(text, t) {
   if (!text) return false;
   const m = LABEL_VALUE.exec(text);
   if (m && ROLE_WORD.test(m[1])) return true;
   if (EN_CREDIT.test(text)) return true;
-  if (leading && m && m[1].trim().length <= 10) return true;
   if (t < 1.5 && HEADER.test(text) && !/[，。！？、]/.test(text)) return true;
   return false;
 }
@@ -57,18 +58,35 @@ function isCredit(text, t, leading) {
 function parseLrc(raw) {
   if (!raw) return [];
   const out = [];
+  // [offset:±ms] shifts the whole file; + means lyrics show earlier, so the
+  // stamp is reduced by that amount (LRC spec). Only the first tag is used.
+  let offsetMs = 0;
+  for (const line of String(raw).split(/\r?\n/)) {
+    const off = /^\s*\[offset:\s*([+-]?\d+)\s*\]/i.exec(line);
+    if (off) { offsetMs = Number(off[1]) || 0; break; }
+  }
   for (const line of String(raw).split(/\r?\n/)) {
     const stamps = [...line.matchAll(/\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g)];
     if (!stamps.length) continue;
     let text = line.replace(/\[\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?\]/g, '').trim();
     for (const m of stamps) {
       const frac = m[3] ? Number('0.' + m[3]) : 0;
-      const t = +m[1] * 60 + +m[2] + frac;
+      const t = +m[1] * 60 + +m[2] + frac - offsetMs / 1000;
       out.push({ t, text });
     }
   }
   out.sort((a, b) => a.t - b.t);
   return out;
+}
+
+// NetEase ships a placeholder line instead of an empty lyric body for
+// instrumentals ("纯音乐，请欣赏" / "此歌曲为没有填词的纯音乐…").
+const INSTRUMENTAL = /^(纯音乐|此歌曲.*(?:没有|无).*填词|instrumental|this (?:song|track).*(?:no|without).*lyrics)/i;
+
+function isInstrumentalNotice(lines) {
+  const texts = (lines || []).map(l => (l.text || '').trim()).filter(Boolean);
+  if (!texts.length || texts.length > 3) return false;
+  return texts.every(t => INSTRUMENTAL.test(t));
 }
 
 function mergeTranslation(base, trans) {
@@ -79,12 +97,10 @@ function mergeTranslation(base, trans) {
 }
 
 function clean(lines) {
-  let leading = true;
   const out = [];
   for (const l of lines) {
     if (!l.text) { out.push(l); continue; }
-    if (isCredit(l.text, l.t, leading)) continue;
-    leading = false;
+    if (isCredit(l.text, l.t)) continue;
     out.push(l);
   }
   // Credits also cluster at the tail (协力 / OP / SP ...). Walk back over empty
@@ -97,14 +113,16 @@ function clean(lines) {
     if (m && m[1].trim().length <= 10 && !/[，。！？、]/.test(text)) { cut = i; continue; }
     break;
   }
-  return out.slice(0, cut);
+  // A body made only of "label: value" lines is not a lyric with a tail
+  // credit block; leaving cut at 0 would erase every line.
+  return cut > 0 ? out.slice(0, cut) : out;
 }
 
 function norm(s) {
   return String(s || '')
     .toLowerCase()
     .replace(/[\s　]+/g, '')
-    .replace(/[（(【\[].*?[)）】\]]/g, '')
+    .replace(/[（(【[].*?[)）】\]]/g, '')
     .replace(/[-—·・,，.。!！?？'"“”‘’]/g, '')
     .trim();
 }
@@ -145,6 +163,7 @@ async function neteaseLyric(id) {
   if (!j || j.code !== 200) return null;
   const base = clean(parseLrc(j.lrc?.lyric));
   if (!base.length) return null;
+  if (isInstrumentalNotice(base)) return { lines: [], source: 'instrumental', songId: id };
   const trans = parseLrc(j.tlyric?.lyric);
   return { lines: mergeTranslation(base, trans), source: 'netease', songId: id };
 }
@@ -196,4 +215,4 @@ async function fetchLyrics(title, artist, duration) {
   return { lines: [], source: 'none' };
 }
 
-module.exports = { fetchLyrics, parseLrc, clean, mergeTranslation, neteaseSearch, neteaseLyric, lrclib };
+module.exports = { fetchLyrics, parseLrc, clean, mergeTranslation, neteaseSearch, neteaseLyric, lrclib, isInstrumentalNotice, scoreSong };
