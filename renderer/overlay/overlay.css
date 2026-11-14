@@ -92,7 +92,8 @@ html, body {
   white-space: nowrap;
   max-width: 100%;
   text-shadow: var(--halo);
-  transition: color .18s linear;
+  transition: color .18s linear, opacity .2s linear;
+  opacity: var(--text-opacity, 1);
   /* Only the glyph box is a mouse target, and it is also the drag handle. */
   pointer-events: auto;
   user-select: none;
@@ -144,6 +145,8 @@ html, body {
   pointer-events: auto;
   user-select: none;
   -webkit-app-region: drag;
+  opacity: var(--text-opacity, 1);
+  transition: opacity .2s linear;
 }
 
 .tr:empty { display: none; }
@@ -249,6 +252,7 @@ body.is-locked .hud { opacity: 0; pointer-events: none; }
   width: 0%;
   border-radius: 99px;
   background: var(--prog-fill, rgba(255, 255, 255, .38));
+  transition: width .12s linear;
 }
 
 body:not(.show-progress) .progress { display: none; }

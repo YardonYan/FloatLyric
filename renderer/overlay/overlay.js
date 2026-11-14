@@ -15,6 +15,7 @@ let offsetMs = 0;
 let stale = false;
 let staleTimer = null;
 let lastSwitchAt = 0;
+let lastProgressPct = -1;
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -49,6 +50,7 @@ function applyTheme() {
   const s = pane.style;
   s.setProperty('--fs', cfg.fontSize + 'px');
   s.setProperty('--fw', String(cfg.fontWeight));
+  s.setProperty('--text-opacity', String(clamp(cfg.textOpacity ?? 100, 10, 100) / 100));
   lineEl.style.fontFamily = Fonts.stack(cfg.fontFamily);
   trEl.style.fontFamily = Fonts.stack(cfg.fontFamily);
   s.setProperty('--tr-scale', String(cfg.translationScale));
@@ -203,7 +205,12 @@ function tick() {
   } else {
     const t = positionNow();
     if (net.duration) {
-      progressFill.style.width = (clamp(t / net.duration, 0, 1) * 100).toFixed(2) + '%';
+      const pct = clamp(t / net.duration, 0, 1) * 100;
+      // Writing the width every frame is wasted compositing for a 3px bar.
+      if (Math.abs(pct - lastProgressPct) >= 0.05) {
+        progressFill.style.width = pct.toFixed(2) + '%';
+        lastProgressPct = pct;
+      }
     }
 
     if (!lyrics.lines.length) {
@@ -244,6 +251,7 @@ function tick() {
 function ingestState(s) {
   net = s;
   netAt = performance.now();
+  lastProgressPct = -1;
   if (!s || !s.ok) { idx = -1; }
 }
 

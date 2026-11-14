@@ -75,7 +75,7 @@ Pick whichever of the three fits.
 
 ### Option 1: Portable exe
 
-For users who do not want Node.js installed. Download `FloatLyric-1.1.1-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
+For users who do not want Node.js installed. Download `FloatLyric-1.1.2-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
 
 One caveat: enabling launch at login registers the current exe path. If you later move the exe, toggle the switch off and back on in the panel so the registered path is refreshed.
 

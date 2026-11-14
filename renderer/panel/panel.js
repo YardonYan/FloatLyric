@@ -46,6 +46,8 @@ function syncControls() {
   $('bgOpacityVal').textContent = Math.round(cfg.bgOpacity * 100) + '%';
   $('glow').value = Math.round(cfg.glow * 100);
   $('glowVal').textContent = Math.round(cfg.glow * 100) + '%';
+  $('textOpacity').value = cfg.textOpacity ?? 100;
+  $('textOpacityVal').textContent = (cfg.textOpacity ?? 100) + '%';
   $('offsetMs').value = cfg.offsetMs;
   $('offsetVal').textContent = (cfg.offsetMs > 0 ? '+' : '') + cfg.offsetMs + ' ms';
   $('fontFamily').value = cfg.fontFamily || 'system';
@@ -161,6 +163,7 @@ function ingestState(s) {
 
 const PAUSED_FRAME_MS = 500;
 const IDLE_FRAME_MS = 1000;
+const PROGRESS_FRAME_MS = 250;
 let frameTimer = null;
 let frameRaf = null;
 
@@ -190,7 +193,7 @@ function tick() {
     if (net.playing) p += (performance.now() - netAt) / 1000;
     $('tCur').textContent = fmtTime(p);
     if (net.duration) $('barFill').style.width = (clamp(p / net.duration, 0, 1) * 100).toFixed(2) + '%';
-    delay = net.playing ? 0 : PAUSED_FRAME_MS;
+    delay = net.playing ? PROGRESS_FRAME_MS : PAUSED_FRAME_MS;
   }
   scheduleLoop(delay);
 }
@@ -254,6 +257,7 @@ async function init() {
   $('fontSize').oninput = e => { cfg.fontSize = +e.target.value; $('fontSizeVal').textContent = cfg.fontSize + ' px'; window.fl.settings.set({ fontSize: cfg.fontSize }); };
   $('bgOpacity').oninput = e => { cfg.bgOpacity = +e.target.value / 100; $('bgOpacityVal').textContent = e.target.value + '%'; window.fl.settings.set({ bgOpacity: cfg.bgOpacity }); };
   $('glow').oninput = e => { cfg.glow = +e.target.value / 100; $('glowVal').textContent = e.target.value + '%'; window.fl.settings.set({ glow: cfg.glow }); };
+  $('textOpacity').oninput = e => { cfg.textOpacity = +e.target.value; $('textOpacityVal').textContent = e.target.value + '%'; window.fl.settings.set({ textOpacity: cfg.textOpacity }); };
   $('offsetMs').oninput = e => { cfg.offsetMs = +e.target.value; $('offsetVal').textContent = (cfg.offsetMs > 0 ? '+' : '') + cfg.offsetMs + ' ms'; window.fl.settings.set({ offsetMs: cfg.offsetMs }); };
 
   $('offMinus').onclick = () => set({ offsetMs: clamp(cfg.offsetMs - 100, -3000, 3000) });
@@ -287,6 +291,8 @@ async function init() {
     });
   }
   window.fl.on.shortcutsFailed(list => showScHint(`这些快捷键已被其他程序占用：${list.join('、')}`, true));
+
+  $('btnPlainMode').onclick = () => set({ fontSize: 15, fontWeight: 400, bgOpacity: 0, glow: 0, textOpacity: 75, shade: -15 });
 
   $('btnRefetch').onclick = async () => {
     $('lyricSource').textContent = '歌词来源：重新搜索中…';

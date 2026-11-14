@@ -185,7 +185,7 @@ function startPointerWatch() {
       x >= z.x - HOT_PAD && x <= z.x + z.w + HOT_PAD &&
       y >= z.y - HOT_PAD && y <= z.y + z.h + HOT_PAD);
     setHot(hit);
-  }, 50);
+  }, 100);
 }
 
 async function autoRetry() {
@@ -422,7 +422,13 @@ function createTray() {
 
 function toggleOverlay() {
   if (!overlay || overlay.isDestroyed()) return;
-  overlay.isVisible() ? overlay.hide() : overlay.show();
+  if (overlay.isVisible()) {
+    // A single "boss key" hides both the strip and the panel.
+    overlay.hide();
+    panel?.hide();
+  } else {
+    overlay.show();
+  }
 }
 
 function toggleLock() {

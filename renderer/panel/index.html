@@ -88,6 +88,10 @@
       </div>
 
       <div class="presets" id="presets"></div>
+
+      <div class="row-btns" style="margin-top:11px">
+        <button class="btn" id="btnPlainMode" title="字号 15px、常规字重、无底色无光晕、文字浓度 75%，让歌词看起来像正文">一键正文模式（低调摸鱼）</button>
+      </div>
     </section>
 
     <section class="block">
@@ -139,6 +143,11 @@
       <div class="ctl">
         <div class="ctl-top"><label for="glow">光晕</label><span class="num" id="glowVal">55%</span></div>
         <input type="range" id="glow" min="0" max="100" step="1" class="range">
+      </div>
+
+      <div class="ctl">
+        <div class="ctl-top"><label for="textOpacity">文字浓度</label><span class="num" id="textOpacityVal">100%</span></div>
+        <input type="range" id="textOpacity" min="30" max="100" step="1" class="range">
       </div>
 
       <div class="toggles">

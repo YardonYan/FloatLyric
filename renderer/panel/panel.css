@@ -141,7 +141,7 @@ body {
   position: absolute; left: 12px; right: 12px; bottom: 7px;
   height: 3px; border-radius: 99px; background: #262b36; overflow: hidden;
 }
-.bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #6f8ff0, #9db8ff); }
+.bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #6f8ff0, #9db8ff); transition: width .25s linear; }
 
 .block { margin-top: 16px; }
 

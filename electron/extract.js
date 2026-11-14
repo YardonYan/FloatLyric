@@ -1,16 +1,52 @@
 // Injected into the NetEase Cloud Music page via CDP Runtime.evaluate.
 // Anchors are semantic class names + aria-labels, never CSS-module hashes,
 // so this survives client updates that re-hash the generated class names.
+//
+// Element references are cached on the page itself (window.__flCache): the
+// poll runs every 100 ms, and re-walking the DOM each time is the single
+// most expensive part of the loop. A detached node (client reload, view
+// rebuild) invalidates the cache and triggers a re-scan.
 (() => {
-  const sl = document.querySelector('[aria-label="播放进度调节"]');
-  if (!sl) return { ok: false, reason: 'no-player' };
+  const cache = window.__flCache || (window.__flCache = {});
+  const alive = el => el && el.isConnected;
 
-  const sr = sl.getBoundingClientRect();
-  if (!sr.width) return { ok: false, reason: 'slider-hidden' };
+  function resetUnderSlider() {
+    cache.track = null;
+    cache.timeEl = null;
+  }
+  function resetUnderBar() {
+    cache.titleBox = null;
+    cache.titleLeaf = null;
+    cache.authorEl = null;
+    cache.coverImg = null;
+    cache.pauseBtn = null;
+    resetUnderSlider();
+  }
+
+  let sl = alive(cache.slider) ? cache.slider : null;
+  if (!sl) {
+    sl = document.querySelector('[aria-label="播放进度调节"]');
+    if (!sl) return { ok: false, reason: 'no-player' };
+    cache.slider = sl;
+    cache.bar = null;
+    resetUnderBar();
+  }
+
+  if (!alive(cache.bar)) {
+    let bar = sl;
+    for (let i = 0; i < 3 && bar.parentElement; i++) bar = bar.parentElement;
+    cache.bar = bar;
+    resetUnderBar();
+  }
+  const bar = cache.bar;
 
   // The played-track width is continuous; the mm:ss text only ticks once a second.
-  const track = sl.querySelector('.track');
-  let ratio = track ? track.getBoundingClientRect().width / sr.width : NaN;
+  let track = alive(cache.track) ? cache.track : null;
+  if (!track) {
+    track = sl.querySelector('.track');
+    cache.track = track;
+  }
+  let ratio = track ? track.getBoundingClientRect().width / sl.getBoundingClientRect().width : NaN;
   if (!isFinite(ratio) || ratio < 0) {
     const pct = parseFloat(sl.style.getPropertyValue('--track-precent'));
     ratio = isFinite(pct) ? pct / 100 : NaN;
@@ -18,31 +54,63 @@
   if (ratio > 1) ratio = 1;
 
   let clock = null, duration = null;
-  for (const e of sl.querySelectorAll('*')) {
-    if (e.children.length) continue;
-    const m = /^\s*(\d{1,2}):(\d{2})\s*\/\s*(\d{1,2}):(\d{2})\s*$/.exec(e.textContent || '');
-    if (m) { clock = +m[1] * 60 + +m[2]; duration = +m[3] * 60 + +m[4]; break; }
+  const TIME_RE = /^\s*(\d{1,2}):(\d{2})\s*\/\s*(\d{1,2}):(\d{2})\s*$/;
+  let timeEl = alive(cache.timeEl) ? cache.timeEl : null;
+  if (timeEl) {
+    const m = TIME_RE.exec(timeEl.textContent || '');
+    if (m) {
+      clock = +m[1] * 60 + +m[2];
+      duration = +m[3] * 60 + +m[4];
+    } else {
+      cache.timeEl = null;
+      timeEl = null;
+    }
+  }
+  if (!timeEl) {
+    for (const e of sl.querySelectorAll('*')) {
+      if (e.children.length) continue;
+      const m = TIME_RE.exec(e.textContent || '');
+      if (m) {
+        cache.timeEl = e;
+        clock = +m[1] * 60 + +m[2];
+        duration = +m[3] * 60 + +m[4];
+        break;
+      }
+    }
   }
 
-  let bar = sl;
-  for (let i = 0; i < 3 && bar.parentElement; i++) bar = bar.parentElement;
-
-  const icon = n => bar.querySelector('[aria-label="' + n + '"]');
-  const playing = !!icon('pause');
-
-  const firstLeaf = root => {
-    if (!root) return '';
+  const firstLeafEl = root => {
+    if (!root) return null;
     for (const e of root.querySelectorAll('*')) {
       if (e.children.length) continue;
-      const t = (e.textContent || '').trim();
-      if (t) return t;
+      if ((e.textContent || '').trim()) return e;
     }
-    return (root.textContent || '').trim();
+    return null;
   };
 
   // .main-title holds a duplicated marquee copy; take the first leaf only.
-  let title = firstLeaf(bar.querySelector('.main-title'));
-  let artist = (bar.querySelector('.author')?.textContent || '').trim();
+  let titleBox = alive(cache.titleBox) ? cache.titleBox : null;
+  if (!titleBox) {
+    titleBox = bar.querySelector('.main-title');
+    cache.titleBox = titleBox;
+  }
+  let titleLeaf = alive(cache.titleLeaf) ? cache.titleLeaf : null;
+  if (titleLeaf && !(titleLeaf.textContent || '').trim()) {
+    titleLeaf = null;
+    cache.titleLeaf = null;
+  }
+  if (!titleLeaf) {
+    titleLeaf = firstLeafEl(titleBox);
+    cache.titleLeaf = titleLeaf;
+  }
+  let title = titleLeaf ? (titleLeaf.textContent || '').trim() : '';
+
+  let authorEl = alive(cache.authorEl) ? cache.authorEl : null;
+  if (!authorEl) {
+    authorEl = bar.querySelector('.author');
+    cache.authorEl = authorEl;
+  }
+  let artist = authorEl ? (authorEl.textContent || '').trim() : '';
 
   if (!title) {
     const seen = [];
@@ -56,9 +124,25 @@
     if (!artist) artist = u.find(t => t !== title) || '';
   }
 
+  let coverImg = alive(cache.coverImg) ? cache.coverImg : null;
+  if (!coverImg) {
+    coverImg = bar.querySelector('img');
+    cache.coverImg = coverImg;
+  }
   let cover = '';
-  const img = bar.querySelector('img');
-  if (img) { const m = /https?:\/\/[^?\s]+/.exec(String(img.src || '')); cover = m ? m[0] : ''; }
+  if (coverImg) {
+    const m = /https?:\/\/[^?\s]+/.exec(String(coverImg.src || ''));
+    cover = m ? m[0] : '';
+  }
+
+  let pauseBtn = alive(cache.pauseBtn) ? cache.pauseBtn : null;
+  if (!pauseBtn) {
+    pauseBtn = bar.querySelector('[aria-label="pause"]');
+    cache.pauseBtn = pauseBtn;
+  }
+  const playing = !!pauseBtn;
+
+  const icon = n => bar.querySelector('[aria-label="' + n + '"]');
 
   return {
     ok: true,

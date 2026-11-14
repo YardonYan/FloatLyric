@@ -14,6 +14,7 @@ const DEFAULTS = {
   bgOpacity: 0,
   bgMode: 'auto',
   glow: 0,
+  textOpacity: 100,
   align: 'left',
   showContext: false,
   showTranslation: true,
