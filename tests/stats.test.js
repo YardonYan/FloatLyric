@@ -118,6 +118,8 @@ test('aggregate: cards, hour buckets, days and top songs', () => {
   assert.equal(agg.hours[10].count, 1);
   assert.equal(agg.days.length, 3);
   assert.equal(agg.top[0].title, 'A');
+  assert.equal(agg.todayTop.title, 'A');
+  assert.equal(agg.todayTop.count, 1);
   assert.equal(agg.recent.length, 2);
 });
 

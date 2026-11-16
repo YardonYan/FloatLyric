@@ -233,6 +233,7 @@ function aggregate(rows, now = new Date()) {
   };
   const dayMap = new Map();
   const topMap = new Map();
+  const todayTopMap = new Map();
   const recent = [];
   for (const r of rows) {
     const ts = Date.parse(r.start);
@@ -241,7 +242,14 @@ function aggregate(rows, now = new Date()) {
     const hour = new Date(ts).getHours();
     if (ts >= day0) {
       if (r.type === 'listen') out.today.ms += ms;
-      else if (r.type === 'song') out.today.count += 1;
+      else if (r.type === 'song') {
+        out.today.count += 1;
+        const key = `${r.title || ''}♪${r.artist || ''}`;
+        const t = todayTopMap.get(key) || { title: r.title || '未知歌曲', artist: r.artist || '', count: 0, ms: 0 };
+        t.count += 1;
+        t.ms += ms;
+        todayTopMap.set(key, t);
+      }
     }
     if (ts >= week0) {
       if (r.type === 'listen') out.week.ms += ms;
@@ -269,6 +277,7 @@ function aggregate(rows, now = new Date()) {
   }
   out.days = [...dayMap.values()].sort((a, b) => (a.date < b.date ? -1 : 1)).slice(-31);
   out.top = [...topMap.values()].sort((a, b) => b.count - a.count || b.ms - a.ms).slice(0, 10);
+  out.todayTop = [...todayTopMap.values()].sort((a, b) => b.count - a.count || b.ms - a.ms)[0] || null;
   out.recent = recent.slice(-20).reverse();
   return out;
 }

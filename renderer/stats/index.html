@@ -17,38 +17,52 @@
   </header>
 
   <main class="scroll">
+    <section class="banner" id="banner">
+      <div class="b-left">
+        <div class="b-k">今日听歌</div>
+        <div class="b-v" id="bannerDur">0 分钟</div>
+        <div class="b-s">共 <span id="bannerCnt" class="num">0</span> 首</div>
+      </div>
+      <div class="b-divider" aria-hidden="true"></div>
+      <div class="b-right">
+        <div class="b-k">今天最常听</div>
+        <div class="b-song" id="bannerSong">还没有完整听歌记录</div>
+        <div class="b-s" id="bannerSongMeta">切歌满 1 秒即计一首</div>
+      </div>
+    </section>
+
     <section class="cards">
       <div class="card">
         <div class="k">今日</div>
-        <div class="v" id="todayDur">—</div>
-        <div class="s"><span id="todayCnt">0</span> 首</div>
+        <div class="v num" id="todayDur">0 分钟</div>
+        <div class="s">听了 <span id="todayCnt" class="num">0</span> 首</div>
       </div>
       <div class="card">
         <div class="k">本周</div>
-        <div class="v" id="weekDur">—</div>
-        <div class="s"><span id="weekCnt">0</span> 首</div>
+        <div class="v num" id="weekDur">0 分钟</div>
+        <div class="s">听了 <span id="weekCnt" class="num">0</span> 首</div>
       </div>
       <div class="card">
         <div class="k">本月</div>
-        <div class="v" id="monthDur">—</div>
-        <div class="s"><span id="monthCnt">0</span> 首</div>
+        <div class="v num" id="monthDur">0 分钟</div>
+        <div class="s">听了 <span id="monthCnt" class="num">0</span> 首</div>
       </div>
     </section>
 
     <section class="block">
-      <div class="block-head"><h2>时段分布（近 7 天）</h2><span class="hint">播放分钟数 / 首数，悬停查看</span></div>
+      <div class="block-head"><h2>时段分布</h2><span class="hint">近 7 天 · 悬停查看详情</span></div>
       <div class="hours" id="hours"></div>
       <div class="axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
     </section>
 
     <section class="block">
-      <div class="block-head"><h2>每日时长（近 30 天）</h2></div>
+      <div class="block-head"><h2>每日时长</h2><span class="hint">近 30 天 · 悬停查看详情</span></div>
       <div class="days" id="days"></div>
       <div class="axis"><span class="ax-left" id="daysFrom"></span><span class="ax-right" id="daysTo"></span></div>
     </section>
 
     <section class="block">
-      <div class="block-head"><h2>最常听 TOP 10</h2></div>
+      <div class="block-head"><h2>最常听 TOP 10</h2><span class="hint">本月</span></div>
       <ol class="top" id="top"></ol>
     </section>
 
@@ -58,6 +72,7 @@
     </section>
   </main>
 
+  <div class="tip" id="tip" hidden></div>
   <script src="stats.js"></script>
 </body>
 </html>
