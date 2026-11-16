@@ -145,6 +145,7 @@ The port can be changed through the `cdpPort` field in the settings file; if the
 | Re-fetch lyrics | The button of the same name in the panel forces a refresh for the current song |
 | Close the panel | The X button; choose "send to tray" (default) or "quit" under Window in the panel |
 | Reopen the panel | Desktop shortcut, click the tray icon, or `Alt+P` |
+| View listening stats | "Listening stats" button in the panel, or the same item in the tray menu |
 | Launch at login | Panel toggle |
 | Playback control | Previous, pause / play and next buttons in the panel |
 

@@ -145,6 +145,7 @@ CDP（Chrome DevTools Protocol）是 Chromium 内核对外提供的调试协议�
 | 重新搜索歌词 | 面板同名按钮，强制刷新当前歌曲的歌词 |
 | 关闭面板 | 右上角 X；在面板「窗口」里可选收起到托盘（默认）或直接退出 |
 | 重新打开面板 | 桌面快捷方式、单击托盘图标，或 `Alt+P` |
+| 查看听歌统计 | 面板「听歌统计」按钮、托盘菜单同名项 |
 | 开机自启 | 面板开关 |
 | 播放控制 | 面板上的上一首、暂停 / 播放、下一首按钮 |
 
@@ -168,8 +169,9 @@ CDP（Chrome DevTools Protocol）是 Chromium 内核对外提供的调试协议�
 ## 项目结构
 
 ```
-electron/    主进程：窗口与托盘、快捷键、CDP 桥、取色、歌词、设置
-renderer/    三个界面：overlay 歌词条 / panel 面板 / picker 取色罩
+electron/    主进程：窗口与托盘、快捷键、CDP 桥、取色、歌词、设置与听歌统计
+electron/stats.js  听歌统计：计时结算、NDJSON 落盘、聚合与报告
+renderer/    四个界面：overlay 歌词条 / panel 面板 / picker 取色罩 / stats 听歌统计
 renderer/shared/  颜色换算、字体枚举与设计变量
 assets/      图标与 README 配图
 build/       打包用图标
@@ -177,7 +179,7 @@ scripts/     开发期工具：CDP 查询、输入注入、系统级鼠标与截
 preview/     歌词条静态设计稿
 research/    前期方案验证（SMTC 探针、CDP 抓取脚本），不参与运行
 tools/       开发期工具：README 配图生成、Release 发布脚本
-tests/       Node 内置 test runner 的单元测试（歌词解析、配色计算）
+tests/       Node 内置 test runner 的单元测试（歌词解析、配色计算、听歌统计）
 .github/     GitHub Actions：测试、lint 与打包校验
 eslint.config.js  ESLint 配置
 ```
