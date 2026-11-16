@@ -44,6 +44,13 @@ contextBridge.exposeInMainWorld('fl', {
     close: () => ipcRenderer.invoke('panel:close')
   },
   app: { quit: () => ipcRenderer.invoke('app:quit'), version: () => ipcRenderer.invoke('app:version') },
+  stats: {
+    data: () => ipcRenderer.invoke('stats:data'),
+    report: type => ipcRenderer.invoke('stats:report', type),
+    csv: () => ipcRenderer.invoke('stats:csv'),
+    copy: text => ipcRenderer.invoke('stats:copy', text),
+    open: () => ipcRenderer.invoke('stats:open')
+  },
   shell: { open: url => ipcRenderer.invoke('shell:open', url) },
   dev: {
     shot: out => ipcRenderer.invoke('dev:shot', out),
@@ -60,6 +67,7 @@ contextBridge.exposeInMainWorld('fl', {
     pickPreview: cb => on('pick:preview', cb),
     hot: cb => on('overlay:hot', cb),
     overlayBounds: cb => on('overlay:boundsChanged', cb),
+    statsToday: cb => on('stats:today', cb),
     pickStarted: cb => on('pick:started', cb),
     pickEnded: cb => on('pick:ended', cb)
   }

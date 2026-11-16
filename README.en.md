@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 <img src="assets/hero.svg" alt="FloatLyric: two appearances of the same lyric line" width="100%">
 
@@ -55,6 +55,7 @@ Both are real runtime screenshots: the first shows the strip with its background
 | Typography | Left-aligned by default, so a long line grows to the right instead of over the left side; font size, weight, installed system font, context lines and translation toggle; lines that still overflow at the minimum size scroll horizontally |
 | Strip appearance | Background density, glow, and progress bar toggle |
 | Window behaviour | Drag the lyric text to move, transparent areas are click-through, either vertical edge resizes the width, bottom-right grip resizes both dimensions, lock position, one-key show / hide, the close button can send the panel to the tray or quit, configurable shortcuts |
+| Listening stats | Today/week/month duration and play counts, hour-of-day distribution, 30-day chart, top songs, Markdown report and CSV export; stored locally only |
 | Extras | Launch at login, tray menu, playback buttons, settings and lyric cache (keyed by title/artist/duration, capped at 80 songs) |
 
 ## Quick Start
@@ -75,7 +76,7 @@ Pick whichever of the three fits.
 
 ### Option 1: Portable exe
 
-For users who do not want Node.js installed. Download `FloatLyric-1.1.2-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
+For users who do not want Node.js installed. Download `FloatLyric-1.2.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
 
 One caveat: enabling launch at login registers the current exe path. If you later move the exe, toggle the switch off and back on in the panel so the registered path is refreshed.
 

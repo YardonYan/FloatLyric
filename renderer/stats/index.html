@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'">
+<title>浮词 · 听歌统计</title>
+<link rel="stylesheet" href="stats.css">
+</head>
+<body>
+  <header class="head">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><span class="name">听歌统计</span></div>
+    <div class="actions">
+      <button class="btn" id="btnWeek">复制周报</button>
+      <button class="btn" id="btnMonth">复制月报</button>
+      <button class="btn" id="btnCsv">导出 CSV</button>
+    </div>
+  </header>
+
+  <main class="scroll">
+    <section class="cards">
+      <div class="card">
+        <div class="k">今日</div>
+        <div class="v" id="todayDur">—</div>
+        <div class="s"><span id="todayCnt">0</span> 首</div>
+      </div>
+      <div class="card">
+        <div class="k">本周</div>
+        <div class="v" id="weekDur">—</div>
+        <div class="s"><span id="weekCnt">0</span> 首</div>
+      </div>
+      <div class="card">
+        <div class="k">本月</div>
+        <div class="v" id="monthDur">—</div>
+        <div class="s"><span id="monthCnt">0</span> 首</div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>时段分布（近 7 天）</h2><span class="hint">播放分钟数 / 首数，悬停查看</span></div>
+      <div class="hours" id="hours"></div>
+      <div class="axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>每日时长（近 30 天）</h2></div>
+      <div class="days" id="days"></div>
+      <div class="axis"><span class="ax-left" id="daysFrom"></span><span class="ax-right" id="daysTo"></span></div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>最常听 TOP 10</h2></div>
+      <ol class="top" id="top"></ol>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>最近播放</h2></div>
+      <ul class="recent" id="recent"></ul>
+    </section>
+  </main>
+
+  <script src="stats.js"></script>
+</body>
+</html>

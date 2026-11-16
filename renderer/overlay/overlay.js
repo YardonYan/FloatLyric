@@ -16,6 +16,18 @@ let stale = false;
 let staleTimer = null;
 let lastSwitchAt = 0;
 let lastProgressPct = -1;
+let todayMs = 0;
+
+function updateStatsBadge() {
+  const el = $('statsBadge');
+  const show = cfg && cfg.showStatsBadge && todayMs > 0;
+  el.hidden = !show;
+  if (show) {
+    const m = Math.round(todayMs / 60000);
+    const h = Math.floor(m / 60);
+    el.textContent = h > 0 ? `今日 ${h} 小时 ${m % 60} 分` : `今日 ${m} 分钟`;
+  }
+}
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
@@ -292,12 +304,14 @@ async function init() {
     lyrics = { lines: [], source: 'loading' };
     idx = -1;
   });
+  window.fl.on.statsToday(({ ms }) => { todayMs = ms; updateStatsBadge(); });
   window.fl.on.settings(next => {
     const refit = next.fontSize !== cfg.fontSize || next.showTranslation !== cfg.showTranslation;
     cfg = next;
     offsetMs = next.offsetMs || 0;
     applyTheme();
     queueHotZones();
+    updateStatsBadge();
     if (refit) { idx = -1; renderLine(lineAt(positionNow()), false); }
   });
   window.fl.on.pickPreview(p => {

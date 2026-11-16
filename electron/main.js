@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut, shell, desktopCapturer } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut, shell, desktopCapturer, clipboard } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
@@ -10,6 +10,7 @@ const { fetchLyrics, parseLrc, clean } = require('./lyrics');
 const { putLyric, touchLyric } = require('./lyric-cache');
 const eyedropper = require('./eyedropper');
 const { log, attach } = require('./log');
+const { StatsTracker, markdownReport, csvExport } = require('./stats');
 
 const ROOT = path.join(__dirname, '..');
 const R = (...p) => path.join(ROOT, 'renderer', ...p);
@@ -31,6 +32,9 @@ let pointerTimer = null;
 let hotZones = [];
 let hot = false;
 let balloonShown = false;
+let stats = null;
+let statsTimer = null;
+let statsWin = null;
 
 // Phases where nothing is in flight and a probe is worth trying again.
 const AUTO_PHASES = new Set(['idle', 'not-running', 'needs-restart', 'error']);
@@ -49,6 +53,10 @@ function boot() {
     try {
       settings.init();
       if (process.platform === 'win32') app.setAppUserModelId('top.yardon.floatlyric');
+
+      stats = new StatsTracker(path.join(app.getPath('userData'), 'stats'));
+      statsTimer = setInterval(() => { stats.tick(); broadcastToday(); }, 60000);
+      broadcastToday();
 
       createOverlay();
       createPanel();
@@ -74,6 +82,8 @@ function boot() {
     settings.flush();
     clearInterval(autoRetryTimer);
     clearInterval(pointerTimer);
+    clearInterval(statsTimer);
+    stats?.shutdown();
     bridge?.stop();
     stopPick(false);
     globalShortcut.unregisterAll();
@@ -97,6 +107,8 @@ function wireBridge() {
   let lastGoodAt = 0;
   let lastGoodSeen = false;
   bridge.on('state', s => {
+    // Stats must see every sample — a swallowed pause would keep counting time.
+    stats && stats.onState(s);
     if (s && s.ok) {
       lastGoodSeen = true;
       lastGoodAt = Date.now();
@@ -107,6 +119,8 @@ function wireBridge() {
   });
   bridge.on('songchange', s => {
     log('songchange', s.title, s.artist, s.duration);
+    stats && stats.onSongChange(s);
+    broadcastToday();
     currentSong = { title: s.title, artist: s.artist, duration: s.duration, cover: s.cover };
     loadLyrics(currentSong);
   });
@@ -382,6 +396,11 @@ function showPanel() {
   panel.focus();
 }
 
+function broadcastToday() {
+  if (!stats) return;
+  broadcast('stats:today', { ms: stats.todayMs, count: stats.todayCount });
+}
+
 // Tell the user where the panel went the first time they close it to the tray.
 // Windows may suppress this balloon under Focus Assist, so it is only a hint.
 function notifyTray() {
@@ -398,6 +417,26 @@ function notifyTray() {
   } catch {}
 }
 
+function openStatsWindow() {
+  if (statsWin && !statsWin.isDestroyed()) { statsWin.show(); statsWin.focus(); return; }
+  statsWin = new BrowserWindow({
+    width: 660,
+    height: 680,
+    minWidth: 480,
+    minHeight: 420,
+    title: '浮词 · 听歌统计',
+    backgroundColor: '#14161C',
+    autoHideMenuBar: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false
+    }
+  });
+  statsWin.loadFile(R('stats', 'index.html'));
+  statsWin.on('closed', () => { statsWin = null; });
+}
+
 function createTray() {
   const iconPath = path.join(ROOT, 'assets', 'tray.png');
   let img = fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : nativeImage.createEmpty();
@@ -409,6 +448,7 @@ function createTray() {
     { label: '隐藏歌词', click: () => { overlay?.hide(); } },
     { type: 'separator' },
     { label: '控制面板', click: showPanel },
+    { label: '听歌统计', click: () => openStatsWindow() },
     { label: '屏幕取色针', click: () => startPick() },
     { type: 'separator' },
     { label: '重新连接网易云', click: () => tryConnect() },
@@ -655,6 +695,12 @@ function registerIpc() {
   ipcMain.handle('app:quit', () => { app.quit(); });
   ipcMain.handle('app:version', () => app.getVersion());
   ipcMain.handle('shell:open', (_e, url) => { shell.openExternal(url); });
+
+  ipcMain.handle('stats:data', () => stats ? stats.snapshot() : null);
+  ipcMain.handle('stats:report', (_e, type) => stats ? markdownReport(stats.readRows(), type === 'week' ? 'week' : 'month') : '');
+  ipcMain.handle('stats:csv', () => stats ? csvExport(stats.readRows()) : '');
+  ipcMain.handle('stats:copy', (_e, text) => { clipboard.writeText(String(text || '')); return true; });
+  ipcMain.handle('stats:open', () => { openStatsWindow(); return true; });
 
   // Dev-only full-desktop grab for visual verification; never registered in builds.
   if (!app.isPackaged) {

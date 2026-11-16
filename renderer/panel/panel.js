@@ -58,6 +58,7 @@ function syncControls() {
   $('locked').checked = !!cfg.locked;
   $('clickThrough').checked = !!cfg.clickThrough;
   $('autoLaunch').checked = !!cfg.autoLaunch;
+  $('showStatsBadge').checked = !!cfg.showStatsBadge;
   $('closeAction').value = cfg.closeAction || 'tray';
   $('btnQuit').title = cfg.closeAction === 'quit' ? '退出浮词' : '收起到托盘';
   if (bounds) { $('ovWidth').value = bounds.width; $('ovHeight').value = bounds.height; }
@@ -267,7 +268,7 @@ async function init() {
   $('fontFamily').onchange = e => set({ fontFamily: e.target.value });
   $('fontWeight').onchange = e => set({ fontWeight: +e.target.value });
 
-  for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch']]) {
+  for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch'], ['showStatsBadge', 'showStatsBadge']]) {
     $(id).onchange = e => set({ [key]: e.target.checked });
   }
 
@@ -313,6 +314,7 @@ async function init() {
     bounds = await window.fl.overlay.center();
     if (bounds) { $('ovWidth').value = bounds.width; $('ovHeight').value = bounds.height; }
   };
+  $('btnStats').onclick = () => window.fl.stats.open();
   $('btnToggleOverlay').onclick = () => window.fl.overlay.toggle();
 
   document.addEventListener('visibilitychange', () => {

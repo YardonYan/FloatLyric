@@ -257,6 +257,19 @@ body.is-locked .hud { opacity: 0; pointer-events: none; }
 
 body:not(.show-progress) .progress { display: none; }
 
+/* Optional "listened today" badge, parked above the progress bar on the left. */
+.stats-badge {
+  position: absolute;
+  left: 18px;
+  bottom: 20px;
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: var(--lyric-faint);
+  text-shadow: var(--halo-soft);
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
 .grip {
   position: absolute;
   right: 3px;

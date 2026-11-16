@@ -25,6 +25,7 @@ const DEFAULTS = {
   showProgressBar: false,
   autoLaunch: false,
   closeAction: 'tray',
+  showStatsBadge: false,
   shortcuts: {
     toggle: 'Alt+L',
     panel: 'Alt+P',
