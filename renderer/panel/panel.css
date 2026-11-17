@@ -290,6 +290,20 @@ body {
 .scale-marks { display: flex; justify-content: space-between; margin-top: 5px; font-size: 10.5px; color: var(--ink-3); }
 
 .presets { display: flex; gap: 7px; margin-top: 13px; flex-wrap: wrap; }
+
+/* 风格预设按钮 */
+.styles { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.style-preset {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 6px 10px; border-radius: 8px;
+  border: 1px solid #2f3542; background: #21262f; cursor: pointer;
+  font-size: 11px; color: #b9c2d4;
+  transition: border-color .15s, background .15s, transform .12s;
+}
+.style-preset:hover { border-color: #4a5f96; background: #2a3140; transform: translateY(-1px); }
+.style-preset .sw { display: flex; gap: 2px; }
+.style-preset .sw i { width: 12px; height: 6px; border-radius: 2px; display: block; border: 1px solid rgba(255, 255, 255, .15); }
+.style-preset .pname { letter-spacing: .02em; }
 .pre {
   width: 25px; height: 25px;
   border-radius: 50%;

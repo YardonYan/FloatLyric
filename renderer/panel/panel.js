@@ -9,6 +9,17 @@ let bounds = null;
 
 const PRESETS = ['#F2F4F8', '#FFD9A0', '#F6C6D0', '#A8D8FF', '#B8E6C8', '#D6C6FF', '#FFE066', '#FF9E8A'];
 
+// 风格预设：一套面向 AI 编程工具 / 办公场景的观感参数，点击整套应用，之后仍可微调。
+// followColor = true 表示不动颜色——取色针取过的话就是取到的那个色。
+const STYLE_PRESETS = [
+  { name: '正文模式', fontFamily: 'system', fontSize: 15, fontWeight: 400, bgOpacity: 0, glow: 0, textOpacity: 75, followColor: true },
+  { name: 'VS Code', fontFamily: 'cascadia', fontSize: 14, fontWeight: 400, baseColor: '#D4D4D4', bgOpacity: 0, glow: 0, textOpacity: 85, followColor: true },
+  { name: '终端 Codex', fontFamily: 'consolas', fontSize: 13, fontWeight: 400, baseColor: '#CCCCCC', bgOpacity: 0, glow: 0, textOpacity: 80, followColor: true },
+  { name: '浅色 IDE', fontFamily: 'yahei', fontSize: 14, fontWeight: 400, baseColor: '#333333', bgOpacity: 0, glow: 0, textOpacity: 90, followColor: true },
+  { name: 'Darcula', fontFamily: 'consolas', fontSize: 14, fontWeight: 400, baseColor: '#A9B7C6', bgOpacity: 0, glow: 0, textOpacity: 90, followColor: true },
+  { name: '文档写作', fontFamily: 'dengxian', fontSize: 15, fontWeight: 400, baseColor: '#24292F', bgOpacity: 0, glow: 0, textOpacity: 100, followColor: false }
+];
+
 function fmtTime(s) {
   if (!isFinite(s) || s < 0) s = 0;
   const m = Math.floor(s / 60), ss = Math.floor(s % 60);
@@ -60,6 +71,14 @@ function syncControls() {
   $('autoLaunch').checked = !!cfg.autoLaunch;
   $('showStatsBadge').checked = !!cfg.showStatsBadge;
   $('diagnostics').checked = !!cfg.diagnostics;
+  // 取色变化后，跟随取色的预设按钮色块同步更新。
+  document.querySelectorAll('#stylePresets .style-preset').forEach((btn, i) => {
+    const p = STYLE_PRESETS[i];
+    if (p && p.followColor) {
+      const dot = btn.querySelector('.sw i');
+      if (dot) dot.style.background = cfg.baseColor;
+    }
+  });
   $('closeAction').value = cfg.closeAction || 'tray';
   $('btnQuit').title = cfg.closeAction === 'quit' ? '退出浮词' : '收起到托盘';
   if (bounds) { $('ovWidth').value = bounds.width; $('ovHeight').value = bounds.height; }
@@ -377,7 +396,39 @@ async function init() {
   }
   window.fl.on.shortcutsFailed(list => showScHint(`这些快捷键已被其他程序占用：${list.join('、')}`, true));
 
-  $('btnPlainMode').onclick = () => set({ fontSize: 15, fontWeight: 400, bgOpacity: 0, glow: 0, textOpacity: 75, shade: -15 });
+  function renderStylePresets() {
+    const host = $('stylePresets');
+    host.textContent = '';
+    for (const p of STYLE_PRESETS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'style-preset';
+      btn.title = `${p.name}：${p.fontSize}px、${p.fontWeight === 400 ? '常规' : '加粗'}、文字浓度 ${p.textOpacity}%${p.followColor ? '、颜色跟随取色针' : ''}。点击应用，之后仍可微调。`;
+      const sw = document.createElement('span');
+      sw.className = 'sw';
+      const c1 = document.createElement('i');
+      c1.style.background = p.followColor ? (cfg.baseColor || '#3D434B') : p.baseColor;
+      sw.appendChild(c1);
+      const pname = document.createElement('span');
+      pname.className = 'pname';
+      pname.textContent = p.name;
+      btn.append(sw, pname);
+      btn.onclick = () => {
+        const patch = {
+          fontFamily: p.fontFamily,
+          fontSize: p.fontSize,
+          fontWeight: p.fontWeight,
+          bgOpacity: p.bgOpacity,
+          glow: p.glow,
+          textOpacity: p.textOpacity
+        };
+        if (!p.followColor) patch.baseColor = p.baseColor;
+        set(patch);
+      };
+      host.appendChild(btn);
+    }
+  }
+  renderStylePresets();
 
   $('btnRefetch').onclick = async () => {
     $('lyricSource').textContent = '歌词来源：重新搜索中…';

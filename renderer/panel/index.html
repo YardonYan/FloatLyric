@@ -74,6 +74,8 @@
         <span class="head-val num" id="hexVal">#F2F4F8</span>
       </div>
 
+      <div class="styles" id="stylePresets" title="一键应用一组外观参数，之后仍可微调"></div>
+
       <div class="pickrow">
         <button class="pick" id="btnPick">
           <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
@@ -95,10 +97,6 @@
       </div>
 
       <div class="presets" id="presets"></div>
-
-      <div class="row-btns" style="margin-top:11px">
-        <button class="btn" id="btnPlainMode" title="字号 15px、常规字重、无底色无光晕、文字浓度 75%，让歌词看起来像正文">一键正文模式（低调摸鱼）</button>
-      </div>
     </section>
 
     <section class="block">
@@ -114,6 +112,8 @@
           <label for="fontFamily">字体</label>
           <select id="fontFamily">
             <option value="system">系统默认</option>
+            <option value="cascadia">Cascadia Code（等宽）</option>
+            <option value="consolas">Consolas（等宽）</option>
             <option value="yahei">微软雅黑</option>
             <option value="dengxian">等线</option>
             <option value="simhei">黑体</option>

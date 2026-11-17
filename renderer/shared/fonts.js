@@ -4,6 +4,8 @@
 
 const FONTS = {
   system: 'system-ui, "Segoe UI Variable Display", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif',
+  cascadia: '"Cascadia Code", "Cascadia Mono", Consolas, "Microsoft YaHei", monospace',
+  consolas: 'Consolas, "Cascadia Mono", "Microsoft YaHei", monospace',
   yahei: '"Microsoft YaHei UI", "Microsoft YaHei", sans-serif',
   dengxian: '"DengXian", "等线", "Microsoft YaHei", sans-serif',
   simhei: '"SimHei", "黑体", "Microsoft YaHei", sans-serif',

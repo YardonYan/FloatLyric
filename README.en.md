@@ -52,7 +52,8 @@ Both are real runtime screenshots: the first shows the strip with its background
 | Local lyrics | Import `.lrc` / `.txt` from the panel to replace the current lyrics immediately |
 | Screen eyedropper | Freezes the desktop on invocation, live preview as the pointer moves, left click to pick, right click or `Esc` to cancel |
 | Colour lightness | Adjusts perceptual lightness in OKLCH; negative is deeper, positive is lighter |
-| Typography | Left-aligned by default, so a long line grows to the right instead of over the left side; font size, weight, installed system font, context lines and translation toggle; lines that still overflow at the minimum size scroll horizontally |
+| Style presets | Six one-click looks tuned for AI coding tools / office work — plain text, VS Code, Codex terminal, light IDE, Darcula, document writing; blending presets follow your eyedropper colour |
+| Typography | Left-aligned by default, so a long line grows to the right instead of over the left side; font size, weight, Cascadia Code / Consolas mono fonts, context lines and translation toggle; lines that still overflow at the minimum size scroll horizontally |
 | Strip appearance | Background density, glow, and progress bar toggle |
 | Window behaviour | Drag the lyric text to move, transparent areas are click-through, either vertical edge resizes the width, bottom-right grip resizes both dimensions, lock position, one-key show / hide, the close button can send the panel to the tray or quit, windows are pulled back on-screen after display changes, configurable shortcuts |
 | Listening stats | Today/week/month duration and play counts, hour-of-day distribution, 30-day chart, top songs, Markdown report and CSV export (copy or save to file), clear-data button; stored locally only |
@@ -76,7 +77,7 @@ Pick whichever of the three fits.
 
 ### Option 1: Portable exe
 
-For users who do not want Node.js installed. Download `FloatLyric-1.3.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
+For users who do not want Node.js installed. Download `FloatLyric-1.4.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
 
 One caveat: enabling launch at login registers the current exe path. If you later move the exe, toggle the switch off and back on in the panel so the registered path is refreshed.
 

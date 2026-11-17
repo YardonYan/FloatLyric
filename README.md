@@ -52,7 +52,8 @@
 | 本地歌词 | 面板可导入 `.lrc` / `.txt`，立即替换当前歌词 |
 | 屏幕取色针 | 唤起瞬间冻结桌面画面，移动鼠标实时预览，左键取色，右键或 `Esc` 取消 |
 | 颜色深浅 | 基于 OKLCH 色彩空间调整感知明度，负值更深、正值更浅 |
-| 排版 | 默认左对齐，长句向右展开、不向左覆盖；字号、字重、系统字体、上下句与翻译开关；超长句在缩到最小字号后改为横向滚动 |
+| 风格预设 | 6 套面向 AI 编程工具 / 办公场景的一键外观（正文模式、VS Code、终端 Codex、浅色 IDE、Darcula、文档写作），融入类颜色跟随取色针 |
+| 排版 | 默认左对齐，长句向右展开、不向左覆盖；字号、字重、Cascadia Code / Consolas 等宽字体、上下句与翻译开关；超长句在缩到最小字号后改为横向滚动 |
 | 底栏外观 | 底色浓度与光晕两个滑杆，以及进度条开关 |
 | 窗口行为 | 拖动歌词文字移动、透明区域点击穿透、左右边缘拖拽调宽、右下角手柄调宽高、锁定位置、一键显示或隐藏，关闭按钮可选收起到托盘或退出，多显示器插拔后窗口自动拉回，快捷键可自定义 |
 | 听歌统计 | 今日/周/月时长与首数、时段分布、每日柱状图、TOP 榜、Markdown 报告与 CSV 导出（可复制或另存文件），支持清空数据，数据仅存本地 |
@@ -76,7 +77,7 @@
 
 ### 途径一：便携版 exe
 
-适合只想用、不想装 Node.js 的情况。从 [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) 下载 `FloatLyric-1.3.0-portable.exe`，放到一个不会被频繁移动的目录，双击运行。设置写在 `%APPDATA%\浮词\settings.json`，与 exe 所在位置无关。自行用 `npm run dist` 构建时，产物名同样是 `FloatLyric-1.3.0-portable.exe`。
+适合只想用、不想装 Node.js 的情况。从 [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) 下载 `FloatLyric-1.4.0-portable.exe`，放到一个不会被频繁移动的目录，双击运行。设置写在 `%APPDATA%\浮词\settings.json`，与 exe 所在位置无关。自行用 `npm run dist` 构建时，产物名同样是 `FloatLyric-1.4.0-portable.exe`。
 
 需要注意：开启开机自启时会登记当前 exe 的路径；之后如果把 exe 移到别处，请在面板里关掉再开一次开关，让登记的路径更新。
 
