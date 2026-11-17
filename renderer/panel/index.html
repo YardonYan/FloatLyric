@@ -163,6 +163,7 @@
         <label class="tg"><input type="checkbox" id="clickThrough"><span class="track"></span><span class="tg-label">鼠标穿透</span></label>
         <label class="tg"><input type="checkbox" id="autoLaunch"><span class="track"></span><span class="tg-label">开机自启</span></label>
         <label class="tg"><input type="checkbox" id="showStatsBadge"><span class="track"></span><span class="tg-label">歌词条显示今日时长</span></label>
+        <label class="tg"><input type="checkbox" id="diagnostics"><span class="track"></span><span class="tg-label">诊断日志</span></label>
       </div>
     </section>
 
@@ -179,7 +180,18 @@
       <div class="row-btns">
         <button class="btn" id="btnRefetch">重新搜索歌词</button>
         <button class="btn" id="btnImport">导入 .lrc</button>
+        <button class="btn" id="btnSearchLyrics">手动搜索</button>
         <button class="btn ghost" id="offReset">归零</button>
+      </div>
+      <div id="searchBox" hidden>
+        <div class="field" style="margin-top:10px">
+          <label for="searchInput">搜索网易云歌词（歌名 / 歌手）</label>
+          <div style="display:flex;gap:6px">
+            <input type="text" id="searchInput" placeholder="例如：晴天 周杰伦">
+            <button class="btn" id="btnDoSearch">搜索</button>
+          </div>
+        </div>
+        <ul class="recent" id="searchResults"></ul>
       </div>
       <p class="fine" id="lyricSource">歌词来源：—</p>
       <input type="file" id="lrcFile" accept=".lrc,.txt" hidden>

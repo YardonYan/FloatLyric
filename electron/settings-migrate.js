@@ -26,6 +26,7 @@ const DEFAULTS = {
   autoLaunch: false,
   closeAction: 'tray',
   showStatsBadge: false,
+  diagnostics: false,
   shortcuts: {
     toggle: 'Alt+L',
     panel: 'Alt+P',

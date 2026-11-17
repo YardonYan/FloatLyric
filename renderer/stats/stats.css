@@ -22,6 +22,8 @@ body {
 }
 .btn:hover { background: #2a3140; border-color: #3c4557; transform: translateY(-1px); }
 .btn.ok { border-color: #35c98e; color: #9df2cf; }
+.btn.danger { border-color: #5c3238; color: #ff9b8f; }
+.btn.danger:hover { background: #2a1e22; border-color: #8a4750; }
 
 .scroll { flex: 1 1 auto; overflow-y: auto; padding: 14px 16px 20px; box-sizing: border-box; }
 .scroll::-webkit-scrollbar { width: 8px; }

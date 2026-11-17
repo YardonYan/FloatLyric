@@ -59,6 +59,7 @@ function syncControls() {
   $('clickThrough').checked = !!cfg.clickThrough;
   $('autoLaunch').checked = !!cfg.autoLaunch;
   $('showStatsBadge').checked = !!cfg.showStatsBadge;
+  $('diagnostics').checked = !!cfg.diagnostics;
   $('closeAction').value = cfg.closeAction || 'tray';
   $('btnQuit').title = cfg.closeAction === 'quit' ? '退出浮词' : '收起到托盘';
   if (bounds) { $('ovWidth').value = bounds.width; $('ovHeight').value = bounds.height; }
@@ -267,10 +268,58 @@ async function init() {
     if (d) updateTodayBar({ ms: d.today.ms, count: d.today.count, top: d.todayTop });
   });
   setInterval(async () => {
+    if (document.hidden) return;
     const d = await window.fl.stats.data();
     if (d) updateTodayBar({ ms: d.today.ms, count: d.today.count, top: d.todayTop });
   }, 30000);
   $('todaybar').onclick = () => window.fl.stats.open();
+  // Manual lyric source switching.
+  $('btnSearchLyrics').onclick = () => {
+    const box = $('searchBox');
+    box.hidden = !box.hidden;
+    if (!box.hidden && $('songTitle').textContent !== '未在播放') {
+      $('searchInput').value = $('songTitle').textContent;
+    }
+  };
+  $('btnDoSearch').onclick = async () => {
+    const q = $('searchInput').value.trim();
+    if (!q) return;
+    const btn = $('btnDoSearch');
+    btn.textContent = '搜索中…';
+    const list = await window.fl.lyrics.search(q).catch(() => []);
+    btn.textContent = '搜索';
+    const host = $('searchResults');
+    host.textContent = '';
+    if (!list.length) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = '没有找到结果';
+      host.appendChild(li);
+      return;
+    }
+    list.forEach(s => {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.className = 'name';
+      const t = document.createElement('span');
+      t.className = 't';
+      t.textContent = s.name;
+      const a = document.createElement('span');
+      a.className = 'a';
+      a.textContent = s.artists + (s.album ? ` · ${s.album}` : '');
+      name.append(t, a);
+      name.title = `${s.name} — ${s.artists}${s.album ? ' · ' + s.album : ''}`;
+      const use = document.createElement('button');
+      use.className = 'btn';
+      use.textContent = '使用';
+      use.onclick = async () => {
+        const r = await window.fl.lyrics.pick(s.id).catch(() => null);
+        if (r) { showSource(r); $('searchBox').hidden = true; host.textContent = ''; }
+      };
+      li.append(name, use);
+      host.appendChild(li);
+    });
+  };
   window.fl.on.overlayBounds(b => {
     if (!b) return;
     bounds = b;
@@ -303,7 +352,7 @@ async function init() {
   $('fontFamily').onchange = e => set({ fontFamily: e.target.value });
   $('fontWeight').onchange = e => set({ fontWeight: +e.target.value });
 
-  for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch'], ['showStatsBadge', 'showStatsBadge']]) {
+  for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch'], ['showStatsBadge', 'showStatsBadge'], ['diagnostics', 'diagnostics']]) {
     $(id).onchange = e => set({ [key]: e.target.checked });
   }
 

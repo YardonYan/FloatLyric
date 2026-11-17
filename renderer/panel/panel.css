@@ -303,7 +303,7 @@ body {
 .field { display: flex; flex-direction: column; gap: 5px; }
 .field label { font-size: 11.5px; color: var(--ink-2); }
 
-.field select, .field input[type="number"] {
+.field select, .field input[type="number"], .field input[type="text"] {
   width: 100%;
   padding: 7px 9px;
   border-radius: var(--r-s);
@@ -332,6 +332,19 @@ body {
 
 .field input.sc-input.capturing { border-color: #6f8ff0; color: #9db4ff; }
 .field input.sc-input:focus { outline: none; border-color: #4a5f96; }
+
+/* 手动歌词搜索结果 */
+.recent { list-style: none; margin: 10px 0 0; padding: 0; max-height: 180px; overflow-y: auto; }
+.recent li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px; border-radius: 6px; font-size: 12px;
+}
+.recent li:nth-child(odd) { background: #191d26; }
+.recent li:hover { background: #1e2431; }
+.recent .name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent .name .t { color: #dfe4ee; }
+.recent .name .a { color: #8b93a5; margin-left: 6px; }
+.recent .btn { flex: 0 0 auto; padding: 3px 10px; font-size: 11px; }
 
 .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; margin-top: 14px; }
 

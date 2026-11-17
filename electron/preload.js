@@ -23,7 +23,9 @@ contextBridge.exposeInMainWorld('fl', {
   lyrics: {
     current: () => ipcRenderer.invoke('lyrics:current'),
     refetch: () => ipcRenderer.invoke('lyrics:refetch'),
-    fromText: raw => ipcRenderer.invoke('lyrics:fromText', raw)
+    fromText: raw => ipcRenderer.invoke('lyrics:fromText', raw),
+    search: q => ipcRenderer.invoke('lyrics:search', q),
+    pick: id => ipcRenderer.invoke('lyrics:pick', id)
   },
   pick: {
     start: () => ipcRenderer.invoke('pick:start'),
@@ -49,6 +51,8 @@ contextBridge.exposeInMainWorld('fl', {
     report: type => ipcRenderer.invoke('stats:report', type),
     csv: () => ipcRenderer.invoke('stats:csv'),
     copy: text => ipcRenderer.invoke('stats:copy', text),
+    save: kind => ipcRenderer.invoke('stats:save', kind),
+    clear: () => ipcRenderer.invoke('stats:clear'),
     open: () => ipcRenderer.invoke('stats:open')
   },
   shell: { open: url => ipcRenderer.invoke('shell:open', url) },

@@ -105,6 +105,7 @@ function renderDays(days) {
 }
 
 async function load() {
+  if (document.hidden) return;
   const d = await window.fl.stats.data();
   if (!d) return;
 
@@ -204,6 +205,16 @@ async function copyReport(type, btn) {
   setTimeout(() => { btn.textContent = old; btn.classList.remove('ok'); }, 1600);
 }
 
+// Click a report button to copy it; right-click it to save it as a file.
+async function saveAs(kind, btn) {
+  const p = await window.fl.stats.save(kind);
+  const old = btn.textContent;
+  if (!p) return;
+  btn.textContent = '已保存 ✓';
+  btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = old; btn.classList.remove('ok'); }, 1800);
+}
+
 $('btnWeek').onclick = () => copyReport('week', $('btnWeek'));
 $('btnMonth').onclick = () => copyReport('month', $('btnMonth'));
 $('btnCsv').onclick = async () => {
@@ -214,6 +225,21 @@ $('btnCsv').onclick = async () => {
   btn.textContent = '已复制 ✓';
   btn.classList.add('ok');
   setTimeout(() => { btn.textContent = old; btn.classList.remove('ok'); }, 1600);
+};
+for (const [btn, kind] of [[$('btnWeek'), 'week-md'], [$('btnMonth'), 'month-md'], [$('btnCsv'), 'csv']]) {
+  btn.addEventListener('contextmenu', async e => {
+    e.preventDefault();
+    await saveAs(kind, btn);
+  });
+}
+$('btnClear').onclick = async () => {
+  const ok = await window.fl.stats.clear();
+  if (ok) {
+    const btn = $('btnClear');
+    btn.textContent = '已清空 ✓';
+    setTimeout(() => { btn.textContent = '清空数据'; }, 1800);
+    load();
+  }
 };
 
 load();

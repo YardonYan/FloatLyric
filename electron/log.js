@@ -4,11 +4,36 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { app } = require('electron');
 
-const enabled = !app.isPackaged;
-const FILE = path.join(__dirname, '..', '_logs', 'main.log');
-if (enabled) {
-  fs.mkdirSync(path.dirname(FILE), { recursive: true });
-  fs.writeFileSync(FILE, '');
+// Dev builds always log. Packaged builds log only while the user has flipped
+// the diagnostics switch in the panel — read straight from settings.json
+// because this module loads before settings init.
+function initialEnabled() {
+  if (!app.isPackaged) return true;
+  try {
+    const s = JSON.parse(fs.readFileSync(path.join(app.getPath('userData'), 'settings.json'), 'utf8'));
+    return s.diagnostics === true;
+  } catch { return false; }
+}
+
+let enabled = initialEnabled();
+const FILE = app.isPackaged
+  ? path.join(app.getPath('userData'), 'logs', 'main.log')
+  : path.join(__dirname, '..', '_logs', 'main.log');
+
+function ensureDir() {
+  try { fs.mkdirSync(path.dirname(FILE), { recursive: true }); } catch {}
+}
+
+if (enabled) ensureDir();
+
+// Panel switch. Dev builds always keep logging on.
+function setDiagnostics(on) {
+  if (!app.isPackaged) {
+    enabled = true;
+    return;
+  }
+  enabled = !!on;
+  if (enabled) ensureDir();
 }
 
 function log(...args) {
@@ -30,4 +55,4 @@ function attach(win, name) {
   win.on('hide', () => log(`${name} hide`));
 }
 
-module.exports = { log, attach, FILE };
+module.exports = { log, attach, FILE, setDiagnostics };

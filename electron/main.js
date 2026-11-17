@@ -1,16 +1,16 @@
 'use strict';
 
-const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut, shell, desktopCapturer, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut, shell, desktopCapturer, clipboard, dialog } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 
 const settings = require('./settings');
 const { NcmBridge, isNcmRunning } = require('./ncm');
-const { fetchLyrics, parseLrc, clean } = require('./lyrics');
+const { fetchLyrics, parseLrc, clean, neteaseSearch, neteaseLyric } = require('./lyrics');
 const { putLyric, touchLyric } = require('./lyric-cache');
 const eyedropper = require('./eyedropper');
-const { log, attach } = require('./log');
-const { StatsTracker, markdownReport, csvExport } = require('./stats');
+const { log, attach, setDiagnostics } = require('./log');
+const { StatsTracker, markdownReport, csvExport, dateKey } = require('./stats');
 
 const ROOT = path.join(__dirname, '..');
 const R = (...p) => path.join(ROOT, 'renderer', ...p);
@@ -63,6 +63,10 @@ function boot() {
       createTray();
       registerIpc();
       registerShortcuts();
+      // Displays can change between runs; pull any window that ended up off-screen.
+      rescueOffScreen();
+      screen.on('display-removed', rescueOffScreen);
+      screen.on('display-metrics-changed', rescueOffScreen);
 
       bridge = new NcmBridge(settings.get().cdpPort);
       wireBridge();
@@ -396,6 +400,41 @@ function showPanel() {
   panel.focus();
 }
 
+// Displays can change between runs or get unplugged; pull any window whose
+// center ended up off every display back onto the primary work area.
+function centerOnAnyDisplay(b) {
+  const cx = b.x + b.width / 2;
+  const cy = b.y + b.height / 2;
+  return screen.getAllDisplays().some(d =>
+    cx >= d.bounds.x && cx <= d.bounds.x + d.bounds.width &&
+    cy >= d.bounds.y && cy <= d.bounds.y + d.bounds.height);
+}
+
+function rescueWindow(win, name) {
+  if (!win || win.isDestroyed()) return;
+  const b = win.getBounds();
+  if (centerOnAnyDisplay(b)) return;
+  const wa = screen.getPrimaryDisplay().workArea;
+  const min = win.getMinimumSize();
+  const width = Math.max(min[0] || 280, Math.min(b.width, wa.width));
+  const height = Math.min(b.height, wa.height);
+  win.setBounds({
+    x: Math.round(wa.x + (wa.width - width) / 2),
+    y: Math.round(wa.y + Math.max(0, wa.height - height - 96)),
+    width,
+    height
+  });
+  log(name, 'rescued off-screen bounds', JSON.stringify(b));
+}
+
+function rescueOffScreen() {
+  rescueWindow(overlay, 'overlay');
+  rescueWindow(panel, 'panel');
+  if (statsWin && !statsWin.isDestroyed() && !centerOnAnyDisplay(statsWin.getBounds())) {
+    statsWin.center();
+  }
+}
+
 function broadcastToday() {
   if (!stats) return;
   broadcast('stats:today', { ms: stats.todayMs, count: stats.todayCount, top: stats.getTodayTop() });
@@ -611,6 +650,44 @@ function registerIpc() {
     broadcast('lyrics:data', currentLyrics);
     return currentLyrics;
   });
+  // Manual source switching: search NetEase by free text, then apply a pick.
+  ipcMain.handle('lyrics:search', async (_e, q) => {
+    const query = String(q || '').trim();
+    if (!query) return [];
+    try {
+      const songs = await neteaseSearch(query);
+      return (songs || []).slice(0, 10).map(s => ({
+        id: s.id,
+        name: s.name || '',
+        artists: (s.artists || []).map(a => a.name).join('/'),
+        album: (s.album && s.album.name) || '',
+        duration: s.duration || 0
+      }));
+    } catch (err) {
+      log('lyrics search failed', err && err.message || err);
+      return [];
+    }
+  });
+  ipcMain.handle('lyrics:pick', async (_e, id) => {
+    try {
+      const r = await neteaseLyric(Number(id));
+      if (!r || !r.lines.length) return null;
+      currentLyrics = r;
+      broadcast('lyrics:data', r);
+      if (currentSong) {
+        cacheLyric(songKey(currentSong), {
+          lines: r.lines,
+          source: r.source,
+          matched: r.matched,
+          matchedArtist: r.matchedArtist
+        });
+      }
+      return r;
+    } catch (err) {
+      log('lyrics pick failed', err && err.message || err);
+      return null;
+    }
+  });
 
   ipcMain.handle('pick:start', async () => { await startPick(); return true; });
   ipcMain.handle('pick:sample', () => eyedropper.sample({}));
@@ -701,6 +778,42 @@ function registerIpc() {
   ipcMain.handle('stats:csv', () => stats ? csvExport(stats.readRows()) : '');
   ipcMain.handle('stats:copy', (_e, text) => { clipboard.writeText(String(text || '')); return true; });
   ipcMain.handle('stats:open', () => { openStatsWindow(); return true; });
+  ipcMain.handle('stats:save', async (_e, kind) => {
+    if (!stats) return '';
+    const now = new Date();
+    const stamp = dateKey(now);
+    let content = '';
+    let name = '';
+    if (kind === 'week-md') { content = markdownReport(stats.readRows(), 'week'); name = `听歌周报-${stamp}.md`; }
+    else if (kind === 'month-md') { content = markdownReport(stats.readRows(), 'month'); name = `听歌月报-${stamp}.md`; }
+    else { content = csvExport(stats.readRows()); name = `听歌明细-${stamp}.csv`; }
+    const parent = statsWin && !statsWin.isDestroyed() ? statsWin : BrowserWindow.getFocusedWindow();
+    const r = await dialog.showSaveDialog(parent, {
+      title: '保存听歌统计',
+      defaultPath: path.join(app.getPath('downloads'), name),
+      filters: kind.endsWith('md') ? [{ name: 'Markdown', extensions: ['md'] }] : [{ name: 'CSV', extensions: ['csv'] }]
+    });
+    if (r.canceled || !r.filePath) return '';
+    fs.writeFileSync(r.filePath, (kind.endsWith('csv') ? '\ufeff' : '') + content, 'utf8');
+    return r.filePath;
+  });
+  ipcMain.handle('stats:clear', async () => {
+    if (!stats) return false;
+    const parent = statsWin && !statsWin.isDestroyed() ? statsWin : BrowserWindow.getFocusedWindow();
+    const r = await dialog.showMessageBox(parent, {
+      type: 'warning',
+      buttons: ['清空', '取消'],
+      defaultId: 1,
+      cancelId: 1,
+      title: '清空听歌统计',
+      message: '清空全部听歌统计数据？',
+      detail: '将删除所有明细文件，不可恢复。'
+    });
+    if (r.response !== 0) return false;
+    stats.reset();
+    broadcastToday();
+    return true;
+  });
 
   // Dev-only full-desktop grab for visual verification; never registered in builds.
   if (!app.isPackaged) {
@@ -725,6 +838,7 @@ function applyLiveSettings(next, patch) {
     overlay.setIgnoreMouseEvents(true, { forward: true });
   }
   if ('locked' in patch) overlay.setMovable(!next.locked);
+  if ('diagnostics' in patch) setDiagnostics(!!next.diagnostics);
   if ('autoLaunch' in patch) {
     // Portable builds run from a per-launch temp dir; the launcher exposes the
     // real exe path here, otherwise the login item would point at a dead dir.

@@ -46,6 +46,7 @@ class StatsTracker {
     this.todayMs = 0;           // persisted played time today (listen rows)
     this.todayCount = 0;        // persisted songs today (song rows)
     this.todayTopMap = new Map(); // title♪artist -> { title, artist, count, ms }
+    this._fileCache = new Map();  // file -> { size, mtimeMs, rows } for incremental reads
     this.ensureToday();
   }
 
@@ -203,6 +204,16 @@ class StatsTracker {
     this.finishSong();
   }
 
+  // Wipe every stats file and the in-memory counters; the current play keeps
+  // accumulating and will be written to a fresh file when it settles.
+  reset() {
+    try { fs.rmSync(this.dir, { recursive: true, force: true }); } catch {}
+    this.todayMs = 0;
+    this.todayCount = 0;
+    this.todayTopMap.clear();
+    this._fileCache.clear();
+  }
+
   append(obj) {
     try {
       fs.mkdirSync(this.dir, { recursive: true });
@@ -210,18 +221,31 @@ class StatsTracker {
     } catch {}
   }
 
+  // Read the current and previous month files. Parsed rows are cached per
+  // file and only re-parsed when size or mtime changes, so opening the stats
+  // window every 30 s costs nothing while the log is untouched.
   readRows(now = new Date(this._now())) {
     const rows = [];
     const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     for (const d of [prev, now]) {
       const f = path.join(this.dir, monthFileName(d));
       if (!fs.existsSync(f)) continue;
+      let stat;
+      try { stat = fs.statSync(f); } catch { continue; }
+      const cached = this._fileCache.get(f);
+      if (cached && cached.size === stat.size && cached.mtimeMs === stat.mtimeMs) {
+        rows.push(...cached.rows);
+        continue;
+      }
       let text = '';
       try { text = fs.readFileSync(f, 'utf8'); } catch { continue; }
+      const parsed = [];
       for (const line of text.split('\n')) {
         if (!line.trim()) continue;
-        try { rows.push(JSON.parse(line)); } catch {}
+        try { parsed.push(JSON.parse(line)); } catch {}
       }
+      this._fileCache.set(f, { size: stat.size, mtimeMs: stat.mtimeMs, rows: parsed });
+      rows.push(...parsed);
     }
     return rows;
   }
