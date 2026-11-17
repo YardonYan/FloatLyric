@@ -4,6 +4,8 @@
 
 **A Windows desktop lyrics overlay that follows NetEase Cloud Music. By default it is one bare line of text, sitting quietly on your working screen.**
 
+[**Live showcase ↗**](https://floatlyric-x7alhjqexlp.qoder.zone) — a scroll-story tour plus an interactive lyric demo; try the appearance controls without installing
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%2010%20·%2011-blue.svg)](#known-limitations)
 [![Electron](https://img.shields.io/badge/Electron-45.3.1-47848F.svg)](package.json)
@@ -24,6 +26,12 @@ FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEa
 The line is left-aligned, so a longer lyric grows to the right instead of covering the content on the left, and the transparent parts of the window are click-through. When you want it clearer, colour, lightness, font size, font weight, background density and glow are all continuously adjustable from the panel; the whole strip can be dragged anywhere, locked in place, or made fully click-through.
 
 Plain Electron plus vanilla JavaScript. No native modules, zero third-party runtime dependencies.
+
+## Live Showcase
+
+**<https://floatlyric-x7alhjqexlp.qoder.zone>**
+
+A scroll-story site that walks through FloatLyric's design: from "lowest possible profile" to click-through, the blend / tune / track trio, and six style presets. It includes an interactive lyric panel — font size, weight, background density, glow, OKLCH lightness, monospace font, translation line, progress bar and lock / click-through all adjust live, with one-click presets and a copy-appearance-JSON action. You can see how the strip sits inside a working screen before installing the exe.
 
 ## What This Is
 

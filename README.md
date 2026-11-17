@@ -4,6 +4,8 @@
 
 **Windows 上的桌面悬浮歌词，跟随网易云音乐播放进度。默认只有一行裸文字，安静地落在工作界面里。**
 
+[**在线介绍站 ↗**](https://floatlyric-x7alhjqexlp.qoder.zone) — 滚动叙事 + 可交互歌词演示，无需安装即可体验外观调节
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 [![平台](https://img.shields.io/badge/平台-Windows%2010%20·%2011-blue.svg)](#已知限制)
 [![Electron](https://img.shields.io/badge/Electron-45.3.1-47848F.svg)](package.json)
@@ -24,6 +26,12 @@
 歌词左对齐，长句向右展开，不压住左边正在看的内容；窗口透明区域不拦截鼠标。想更醒目时，颜色、深浅、字号、字重、底色浓度与光晕都能连续调节；整条可拖到屏幕任意位置，也能锁定或完全穿透。
 
 纯 Electron 加原生 JavaScript，没有原生模块，运行时零第三方依赖。
+
+## 在线介绍站
+
+**<https://floatlyric-x7alhjqexlp.qoder.zone>**
+
+一个滚动叙事的介绍站，把浮词的设计思路讲清楚：从「把存在感压到最低」到点击穿透、取色 / 调节 / 统计三件事、六套风格预设。站内有一块可交互的歌词演示面板——字号、字重、底色浓度、光晕、颜色深浅（OKLCH）、等宽字体、翻译行、进度条、锁定穿透都能实时调，还能一键切换六套预设、复制当前外观 JSON。不用安装 exe 就能先看到歌词条落在工作界面里的样子。
 
 ## 这是什么
 
