@@ -134,6 +134,31 @@ function setConn(phase, detail) {
   );
 }
 
+function fmtDurCn(ms) {
+  const total = Math.max(0, Math.round(ms / 60000));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (total === 0) return '不到 1 分钟';
+  return h > 0 ? `${h} 小时 ${m} 分` : `${m} 分钟`;
+}
+
+function updateTodayBar(d) {
+  const bar = $('todaybar');
+  if (!d || (!d.ms && !d.count)) { bar.hidden = true; return; }
+  bar.hidden = false;
+  $('tbDur').textContent = fmtDurCn(d.ms || 0);
+  $('tbCnt').textContent = d.count || 0;
+  const top = d.top;
+  const el = $('tbTop');
+  if (top) {
+    el.textContent = `《${top.title}》× ${top.count} 次`;
+    el.title = `《${top.title}》${top.artist ? ' — ' + top.artist : ''} · 今天听了 ${top.count} 次，约 ${fmtDurCn(top.ms)}`;
+  } else {
+    el.textContent = '最常听：—';
+    el.title = '';
+  }
+}
+
 function ingestState(s) {
   net = s; netAt = performance.now();
   if (!s || !s.ok) {
@@ -236,6 +261,12 @@ async function init() {
   window.fl.on.lyricsData(showSource);
   window.fl.on.settings(next => { cfg = next; syncControls(); });
   window.fl.on.pickEnded(() => refreshBounds());
+  window.fl.on.statsToday(d => updateTodayBar(d));
+  // The first broadcast happens before this window exists, so pull once here.
+  window.fl.stats.data().then(d => {
+    if (d) updateTodayBar({ ms: d.today.ms, count: d.today.count, top: d.todayTop });
+  });
+  $('todaybar').onclick = () => window.fl.stats.open();
   window.fl.on.overlayBounds(b => {
     if (!b) return;
     bounds = b;

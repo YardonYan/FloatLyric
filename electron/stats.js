@@ -45,6 +45,7 @@ class StatsTracker {
     this.todayKey = null;
     this.todayMs = 0;           // persisted played time today (listen rows)
     this.todayCount = 0;        // persisted songs today (song rows)
+    this.todayTopMap = new Map(); // title♪artist -> { title, artist, count, ms }
     this.ensureToday();
   }
 
@@ -58,6 +59,7 @@ class StatsTracker {
     this.todayKey = key;
     this.todayMs = 0;
     this.todayCount = 0;
+    this.todayTopMap.clear();
     this.restoreToday();
   }
 
@@ -72,8 +74,21 @@ class StatsTracker {
       try { r = JSON.parse(line); } catch { continue; }
       if (dateKey(new Date(r.start)) !== this.todayKey) continue;
       if (r.type === 'listen') this.todayMs += Math.round((r.sec || 0) * 1000);
-      else if (r.type === 'song') this.todayCount += 1;
+      else if (r.type === 'song') {
+        this.todayCount += 1;
+        const key = `${r.title || ''}♪${r.artist || ''}`;
+        const t = this.todayTopMap.get(key) || { title: r.title || '未知歌曲', artist: r.artist || '', count: 0, ms: 0 };
+        t.count += 1;
+        t.ms += Math.round((r.sec || 0) * 1000);
+        this.todayTopMap.set(key, t);
+      }
     }
+  }
+
+  // Today's most-played track, or null. Used by the panel's today bar.
+  getTodayTop() {
+    return [...this.todayTopMap.values()]
+      .sort((a, b) => b.count - a.count || b.ms - a.ms)[0] || null;
   }
 
   startSong(s) {
@@ -171,7 +186,14 @@ class StatsTracker {
         dur: c.duration,
         sec: +(c.playedMs / 1000).toFixed(1)
       });
-      if (dateKey(new Date(c.startTs)) === this.todayKey) this.todayCount += 1;
+      if (dateKey(new Date(c.startTs)) === this.todayKey) {
+        this.todayCount += 1;
+        const key = `${c.title}♪${c.artist}`;
+        const t = this.todayTopMap.get(key) || { title: c.title, artist: c.artist, count: 0, ms: 0 };
+        t.count += 1;
+        t.ms += c.playedMs;
+        this.todayTopMap.set(key, t);
+      }
     }
     this.current = null;
     this.playingSince = null;

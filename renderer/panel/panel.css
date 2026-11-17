@@ -143,6 +143,36 @@ body {
 }
 .bar i { display: block; height: 100%; width: 0; border-radius: 99px; background: linear-gradient(90deg, #6f8ff0, #9db8ff); transition: width .25s linear; }
 
+/* 今日统计条：播放栏下方的居中胶囊，点击打开听歌统计窗口。 */
+.todaybar {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin: 9px auto 2px; padding: 5px 14px;
+  background: linear-gradient(90deg, rgba(111, 143, 240, .10), rgba(53, 201, 142, .10));
+  border: 1px solid rgba(111, 143, 240, .22);
+  border-radius: 99px; font-size: 11.5px; color: #b9c2d4;
+  cursor: pointer; user-select: none; width: fit-content;
+  transition: background .15s, border-color .15s, transform .12s;
+}
+.todaybar:hover {
+  background: rgba(111, 143, 240, .17);
+  border-color: rgba(111, 143, 240, .45);
+  transform: translateY(-1px);
+}
+.todaybar b { color: #e7eaf1; font-variant-numeric: tabular-nums; }
+.todaybar .num { font-variant-numeric: tabular-nums; }
+.tb-ico {
+  width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; flex: 0 0 auto;
+  background: linear-gradient(135deg, #6f8ff0, #35c98e);
+  color: #fff; font-size: 11px;
+  box-shadow: 0 0 8px rgba(111, 143, 240, .35);
+}
+.tb-sep { width: 1px; height: 12px; background: rgba(255, 255, 255, .16); flex: 0 0 auto; }
+.tb-top {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 260px; color: #9df2cf;
+}
+
 .block { margin-top: 16px; }
 
 .block-head {

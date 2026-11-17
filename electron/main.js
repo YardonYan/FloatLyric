@@ -398,7 +398,7 @@ function showPanel() {
 
 function broadcastToday() {
   if (!stats) return;
-  broadcast('stats:today', { ms: stats.todayMs, count: stats.todayCount });
+  broadcast('stats:today', { ms: stats.todayMs, count: stats.todayCount, top: stats.getTodayTop() });
 }
 
 // Tell the user where the panel went the first time they close it to the tray.
