@@ -151,7 +151,7 @@ function updateTodayBar(d) {
   const top = d.top;
   const el = $('tbTop');
   if (top) {
-    el.textContent = `《${top.title}》× ${top.count} 次`;
+    el.textContent = `《${top.title}》`;
     el.title = `《${top.title}》${top.artist ? ' — ' + top.artist : ''} · 今天听了 ${top.count} 次，约 ${fmtDurCn(top.ms)}`;
   } else {
     el.textContent = '最常听：—';
@@ -262,10 +262,14 @@ async function init() {
   window.fl.on.settings(next => { cfg = next; syncControls(); });
   window.fl.on.pickEnded(() => refreshBounds());
   window.fl.on.statsToday(d => updateTodayBar(d));
-  // The first broadcast happens before this window exists, so pull once here.
+  // Pull on the same 30s cadence as the stats window so the bar always matches it.
   window.fl.stats.data().then(d => {
     if (d) updateTodayBar({ ms: d.today.ms, count: d.today.count, top: d.todayTop });
   });
+  setInterval(async () => {
+    const d = await window.fl.stats.data();
+    if (d) updateTodayBar({ ms: d.today.ms, count: d.today.count, top: d.todayTop });
+  }, 30000);
   $('todaybar').onclick = () => window.fl.stats.open();
   window.fl.on.overlayBounds(b => {
     if (!b) return;
