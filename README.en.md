@@ -19,9 +19,11 @@
 
 ---
 
+# FloatLyric — A free, portable NetEase Cloud Music desktop lyrics overlay for Windows
+
 > You want to see the lyrics while working, but switching NetEase Cloud Music to the foreground is a bit loud. So let the current line stay on screen, looking much like the text around it.
 
-FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation. The default appearance is a single bare line of text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document.
+FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation. The default appearance is a single bare line of text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document, made for listening to music discreetly at work.
 
 The line is left-aligned, so a longer lyric grows to the right instead of covering the content on the left, and the transparent parts of the window are click-through. When you want it clearer, colour, lightness, font size, font weight, background density and glow are all continuously adjustable from the panel; the whole strip can be dragged anywhere, locked in place, or made fully click-through.
 
