@@ -58,6 +58,9 @@ Both are real runtime screenshots: the first shows the strip with its background
 | Capability | Detail |
 | --- | --- |
 | Playback sync | Reads client playback state every 100 ms while playing (slower when paused); switches lyrics on song change, and probes/reconnects on its own if NetEase starts later |
+| First-run wizard | Walks you through connecting on first open: one click to launch NetEase with the debug port, or to restart it if it is already running; collapses once connected |
+| Demo mode | While disconnected the strip loops a short demo script (drag, interlude and all) so you can see what it does; real lyrics take over once connected (can be turned off) |
+| Interlude hint | During intros, instrumentals or any pause longer than 4 s the strip shows a "♪ Ns" countdown to the next vocal line instead of hanging or going blank |
 | Lyrics and translation | NetEase lyrics endpoint first, lrclib.net as fallback; translation line scales with the main line; honours LRC `[offset:]` and detects instrumental placeholders |
 | Local lyrics | Import `.lrc` / `.txt` from the panel to replace the current lyrics immediately |
 | Screen eyedropper | Freezes the desktop on invocation, live preview as the pointer moves, left click to pick, right click or `Esc` to cancel |
@@ -87,7 +90,7 @@ Pick whichever of the three fits.
 
 ### Option 1: Portable exe
 
-For users who do not want Node.js installed. Download `FloatLyric-1.4.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
+For users who do not want Node.js installed. Download `FloatLyric-1.5.0-portable.exe` from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest), put it somewhere that will not be moved around, and double-click. Settings live in `%APPDATA%\浮词\settings.json` and do not depend on where the exe sits. A build produced locally with `npm run dist` uses the same name.
 
 One caveat: enabling launch at login registers the current exe path. If you later move the exe, toggle the switch off and back on in the panel so the registered path is refreshed.
 
@@ -133,9 +136,10 @@ On first use, one of three things happens:
 
 | Panel state | What to do |
 | --- | --- |
-| NetEase is not running | Just start it; FloatLyric probes and reconnects automatically |
-| NetEase is running without the debugging port | A hint appears at the top of the panel; click "Launch NetEase with debugging", or use the same entry in the tray menu |
-| The port is open but the connection dropped | Click "Reconnect" in the panel; the same entry is in the tray menu |
+| NetEase is not running | Just start it; FloatLyric probes and reconnects automatically, or click "Launch NetEase (debug mode)" in the panel wizard |
+| NetEase is running without the debugging port | Click "Restart NetEase with debugging" in the panel wizard, or use "Launch NetEase with debugging" in the tray menu |
+| The debugging port is taken by another program | Close whatever squats on port 9222 and re-check; FloatLyric also recovers on its own once the port frees up |
+| The port is open but the connection dropped | Click "Re-check" in the panel; the same entry is in the tray menu |
 
 Clicking "Launch NetEase with debugging" force-terminates a running `cloudmusic.exe`, then starts it again with `--remote-debugging-port=9222`. The playlist is usually preserved and the current song restarts from the beginning. Save anything pending in the client before clicking. After that, launching NetEase normally is enough — FloatLyric probes and reconnects on its own.
 

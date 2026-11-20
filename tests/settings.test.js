@@ -42,3 +42,9 @@ test('null or garbage input yields pure defaults', () => {
   assert.deepEqual(mergeSettings(null), { ...DEFAULTS, shortcuts: { ...DEFAULTS.shortcuts }, settingsVersion: SETTINGS_VERSION });
   assert.equal(mergeSettings(undefined).fontSize, DEFAULTS.fontSize);
 });
+
+test('v1.5 defaults appear for files that predate them', () => {
+  const data = mergeSettings({});
+  assert.equal(data.wizardDone, false);
+  assert.equal(data.demoEnabled, true);
+});
