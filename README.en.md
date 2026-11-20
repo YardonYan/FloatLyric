@@ -25,9 +25,9 @@
 
 FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation — and when NetEase is not connected it follows any player that reports to Windows (QQ Music, Spotify, browsers) through the system media interface. The default appearance is a single bare line of text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document, made for listening to music discreetly at work.
 
-The line is left-aligned, so a longer lyric grows to the right instead of covering the content on the left, and the transparent parts of the window are click-through. When you want it clearer, colour, lightness, font size, font weight, background density and glow are all continuously adjustable from the panel; the whole strip can be dragged anywhere, locked in place, or made fully click-through.
+The line is left-aligned, so a longer lyric grows to the right instead of covering the content on the left; transparent areas are click-through and you move the strip by dragging the text itself. Colour, size, background and glow are continuously adjustable, or one-click a style preset. Plain Electron plus vanilla JavaScript, zero third-party runtime dependencies.
 
-Plain Electron plus vanilla JavaScript. No native modules, zero third-party runtime dependencies.
+**Contents** · [Quick Start](#quick-start) · [Features](#features) · [Showcase](#live-showcase) · [Ways to Use](#ways-to-use) · [Connecting](#connecting-to-netease-cloud-music) · [Other Players](#following-other-players-system-media-fallback) · [Shortcuts](#controls--shortcuts) · [How It Works](#how-it-works) · [Limits](#known-limitations) · [Troubleshooting](#troubleshooting) · [Disclaimer](#disclaimer)
 
 ## Live Showcase
 
@@ -35,13 +35,13 @@ Plain Electron plus vanilla JavaScript. No native modules, zero third-party runt
 
 A scroll-story site that walks through FloatLyric's design: from "lowest possible profile" to click-through, the blend / tune / track trio, and six style presets. It includes an interactive lyric panel — font size, weight, background density, glow, OKLCH lightness, monospace font, translation line, progress bar and lock / click-through all adjust live, with one-click presets and a copy-appearance-JSON action. You can see how the strip sits inside a working screen before installing the exe.
 
-## What This Is
-
-Desktop lyrics tools are usually an obvious floating window: background, album art, playback controls — unmistakably a music app. FloatLyric goes the other way and reduces the lyrics to the lowest possible profile: one 22px line in regular weight, dark ink grey `#3D434B`, background density and glow both at 0, progress bar off, window 620 × 84 (resizable from the bottom-right grip).
-
-To blend in further, use the screen eyedropper to sample the body text colour of the window you are working in; the lyric line takes on the same ink. To make it stand out, raise the background density or glow sliders — a soft backing plate and a light halo come back. Both sliders scale continuously from 0, and 0 means genuinely off, not "the lowest visible setting".
-
 ## Screenshots
+
+<p align="center">
+  <img src="assets/demo-strip.gif" alt="Animated capture of the real strip while following: lines change one by one, interludes count down" width="80%">
+</p>
+
+This is what following actually looks like: one 22px line in regular weight, dark ink grey `#3D434B`, no background, no glow, window 620 × 84 (resizable from the bottom-right grip). Lines change one by one, interludes count down, transparent areas never block the mouse.
 
 <p align="center">
   <img src="assets/screenshot-overlay.png" alt="The lyric strip with background and progress bar enabled" width="62%">
@@ -57,21 +57,13 @@ Both are real runtime screenshots: the first shows the strip with its background
 
 | Capability | Detail |
 | --- | --- |
-| Playback sync | Prefers a direct connection to the NetEase client (a read every 100 ms while playing, slower when paused); when NetEase is not connected it follows any player through the Windows system media interface, and switches back automatically once NetEase connects |
-| System media fallback | QQ Music, Spotify, Apple Music, browsers — anything that reports media to Windows drives the strip, with automatic lyric search, playback control and listening stats; can be turned off |
-| First-run wizard | Walks you through connecting on first open: one click to launch NetEase with the debug port, or to restart it if it is already running; collapses once connected |
-| Demo mode | While disconnected the strip loops a short demo script (drag, interlude and all) so you can see what it does; real lyrics take over once connected (can be turned off) |
-| Interlude hint | During intros, instrumentals or any pause longer than 4 s the strip shows a "♪ Ns" countdown to the next vocal line instead of hanging or going blank |
-| Lyrics and translation | NetEase lyrics endpoint first, lrclib.net as fallback; translation line scales with the main line; honours LRC `[offset:]` and detects instrumental placeholders |
-| Local lyrics | Import `.lrc` / `.txt` from the panel to replace the current lyrics immediately |
-| Screen eyedropper | Freezes the desktop on invocation, live preview as the pointer moves, left click to pick, right click or `Esc` to cancel |
-| Colour lightness | Adjusts perceptual lightness in OKLCH; negative is deeper, positive is lighter |
-| Style presets | Six one-click looks tuned for AI coding tools / office work — plain text, VS Code, Codex terminal, light IDE, Darcula, document writing; blending presets follow your eyedropper colour |
-| Typography | Left-aligned by default, so a long line grows to the right instead of over the left side; font size, weight, Cascadia Code / Consolas mono fonts, context lines and translation toggle; lines that still overflow at the minimum size scroll horizontally |
-| Strip appearance | Background density, glow, and progress bar toggle |
-| Window behaviour | Drag the lyric text to move, transparent areas are click-through, either vertical edge resizes the width, bottom-right grip resizes both dimensions, lock position, one-key show / hide, the close button can send the panel to the tray or quit, windows are pulled back on-screen after display changes, configurable shortcuts |
-| Listening stats | Today/week/month duration and play counts, hour-of-day distribution, 30-day chart, top songs, Markdown report and CSV export (copy or save to file), clear-data button; stored locally only |
-| Extras | Launch at login, tray menu, playback buttons, settings and lyric cache (keyed by title/artist/duration, capped at 80 songs), optional diagnostics logging |
+| Playback sync | Prefers a direct NetEase connection (a read every 100 ms, slower when paused); otherwise follows any player through the Windows system media interface, switching back automatically |
+| Lyrics and translation | NetEase endpoint first, lrclib.net fallback; auto search, translation line, instrumental placeholder, manual re-source and `.lrc` import |
+| Appearance | Eyedropper blending, OKLCH lightness, six style presets, size and weight, background density and glow — all continuously adjustable |
+| Window behaviour | Drag the text to move, click-through transparency, edge resize, lock, tray park, auto pull-back on display changes |
+| Thoughtful touches | First-run wizard, demo mode while disconnected, automatic interlude countdown |
+| Listening stats | Today/week/month duration and plays, hour-of-day distribution, top songs, Markdown/CSV export, stored locally only |
+| Extras | Launch at login, configurable shortcuts, 80-song lyric cache, optional diagnostics logging |
 
 ## Quick Start
 
@@ -88,6 +80,12 @@ Grab the portable exe from [Releases](https://github.com/YardonYan/FloatLyric/re
 | Debugging port available (optional) | Following is most precise with the client started as `--remote-debugging-port=9222`; the panel wizard configures it in one click, see "Connecting to NetEase Cloud Music" below |
 
 On first launch nothing in the NetEase installation is modified; the app only tries to reach port 9222 on localhost. To run from source or package it yourself, see options 2 and 3 below.
+
+Once installed, these are the five spots on the panel worth knowing:
+
+<p align="center">
+  <img src="assets/panel-guide.png" alt="Annotated panel: playback controls, today stats, connection wizard, style presets, eyedropper" width="100%">
+</p>
 
 ## Ways to Use
 
