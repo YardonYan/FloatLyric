@@ -79,10 +79,14 @@ function syncControls() {
   // 取色变化后，跟随取色的预设按钮色块同步更新。
   document.querySelectorAll('#stylePresets .style-preset').forEach((btn, i) => {
     const p = STYLE_PRESETS[i];
-    if (p && p.followColor) {
+    if (!p) return;
+    if (p.followColor) {
       const dot = btn.querySelector('.sw i');
       if (dot) dot.style.background = cfg.baseColor;
     }
+    // The active preset gets a lit border so the user never has to guess
+    // which look is currently applied.
+    btn.classList.toggle('on', p.name === cfg.stylePreset);
   });
   $('closeAction').value = cfg.closeAction || 'tray';
   $('btnQuit').title = cfg.closeAction === 'quit' ? '退出浮词' : '收起到托盘';
@@ -190,12 +194,17 @@ function renderWizard() {
   const txt = $('wzText');
   btn.disabled = false;
   if (phase === 'connected') {
+    // Done is done: a "skip" button next to success only invites confusion.
     $('wzStep').textContent = '完成';
     txt.textContent = '✓ 已连接，浮词正在跟随网易云播放。去挑一个喜欢的样式，然后开始听歌吧。';
     btn.textContent = '开始使用';
-  } else if (phase === 'launching') {
+    $('wzSkip').hidden = true;
+    return;
+  }
+  $('wzSkip').hidden = false;
+  if (phase === 'launching') {
     $('wzStep').textContent = '进行中';
-    txt.textContent = '正在重启网易云并开启调试端口，通常需要几秒钟…';
+    txt.textContent = '正在重启网易云并开启调试端口，通常需要几秒…';
     btn.textContent = '请稍候';
     btn.disabled = true;
   } else if (phase === 'probing') {
@@ -205,15 +214,15 @@ function renderWizard() {
     btn.disabled = true;
   } else if (phase === 'needs-restart') {
     $('wzStep').textContent = '第一步';
-    txt.textContent = '网易云已在运行，但还没开启调试端口，浮词读不到播放进度。点下面的按钮会自动重启网易云并带上调试参数（会先关闭当前的网易云）。';
+    txt.textContent = '网易云在运行，但没开调试端口，浮词读不到进度。点下面的按钮会自动重启网易云并带上参数（当前播放会从头开始）。';
     btn.textContent = '一键重启网易云并开启调试';
   } else if (phase === 'port-busy') {
     $('wzStep').textContent = '第一步';
-    txt.textContent = `调试端口 ${cfg.cdpPort} 被另一个程序占用了。关闭占用它的程序后再试，或重启浮词。`;
+    txt.textContent = `调试端口 ${cfg.cdpPort} 被另一个程序占用。关闭占用它的程序后再试。`;
     btn.textContent = '重新检测';
   } else if (phase === 'not-running') {
     $('wzStep').textContent = '第一步';
-    txt.textContent = '网易云还没有运行。点下面的按钮，浮词会以调试模式启动它——只需这一次，之后浮词会自动跟随每一首歌。';
+    txt.textContent = '网易云还没运行。点下面的按钮，浮词会以调试模式启动它——只需这一次，之后自动跟随。';
     btn.textContent = '一键启动网易云（调试模式）';
   } else {
     $('wzStep').textContent = '第一步';
@@ -505,7 +514,8 @@ async function init() {
           fontWeight: p.fontWeight,
           bgOpacity: p.bgOpacity,
           glow: p.glow,
-          textOpacity: p.textOpacity
+          textOpacity: p.textOpacity,
+          stylePreset: p.name
         };
         if (!p.followColor) patch.baseColor = p.baseColor;
         set(patch);

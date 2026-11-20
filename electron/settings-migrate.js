@@ -30,6 +30,7 @@ const DEFAULTS = {
   wizardDone: false,
   demoEnabled: true,
   smtcFallback: true,
+  stylePreset: '',
   shortcuts: {
     toggle: 'Alt+L',
     panel: 'Alt+P',

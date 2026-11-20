@@ -52,4 +52,5 @@ test('v1.5 defaults appear for files that predate them', () => {
 test('v2.0 defaults appear for files that predate them', () => {
   const data = mergeSettings({});
   assert.equal(data.smtcFallback, true);
+  assert.equal(data.stylePreset, '');
 });

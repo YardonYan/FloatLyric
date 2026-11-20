@@ -68,7 +68,7 @@
         <button class="btn solid" id="wzAction">一键启动</button>
         <button class="btn ghost" id="wzSkip">跳过</button>
       </div>
-      <p class="fine">浮词通过网易云的本机调试端口读取播放进度，端口只监听 127.0.0.1。网易云未连接时，若开启「跟随其他播放器」，QQ音乐、Spotify、浏览器等向 Windows 报告媒体的播放器也能驱动歌词条（进度精度略低，网易云桌面版自身不报告媒体，无法走这条路）。配置一次即可，之后浮词会自动跟随。</p>
+      <p class="fine">浮词只读取本机播放进度，配置一次即可。网易云连不上时，QQ音乐、Spotify、浏览器也能跟（系统媒体接口，见下方开关）。</p>
     </section>
 
     <section class="block" id="connBlock" hidden>
@@ -236,7 +236,7 @@
         <button class="btn" id="btnCenter">移到屏幕底部居中</button>
         <button class="btn ghost" id="btnToggleOverlay">显示 / 隐藏歌词</button>
       </div>
-      <p class="fine">拖动歌词文字即可移动位置；拖窗口左右边缘调整宽度，拖右下角手柄同时调整宽高。窗口其余透明区域不拦截鼠标，点击会落到下层窗口；只有歌词、工具条、边缘与手柄可交互。快捷键可在下方自定义。</p>
+      <p class="fine">拖歌词文字移动 · 拖左右边缘调宽 · 拖右下角调宽高；透明处点击穿透，快捷键见下方。</p>
     </section>
 
     <section class="block">
