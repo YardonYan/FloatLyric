@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 430" width="1200" height="430" role="img" aria-label="四步上手：下载便携版、向导一键连接、歌词落进工作界面、调成你的样子">
+  <style>
+    text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif; }
+  </style>
+  <rect width="1200" height="430" fill="#F6F8FB"/>
+
+  <!-- ===== card 1: download ===== -->
+  <rect x="44" y="36" width="236" height="330" rx="14" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="1.5"/>
+  <circle cx="68" cy="64" r="14" fill="#3D5AA8"/>
+  <text x="68" y="69" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">1</text>
+  <text x="92" y="69" font-size="16" font-weight="600" fill="#243044">下载便携版</text>
+
+  <rect x="72" y="104" width="180" height="46" rx="10" fill="#F6F8FB" stroke="#D9E0EA"/>
+  <circle cx="98" cy="127" r="11" fill="#E8EEF7"/>
+  <path d="M98 120v10m0 0l-4.5-4.5M98 130l4.5-4.5" stroke="#3D5AA8" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+  <text x="116" y="123" font-size="11" fill="#243044">FloatLyric-2.0.0</text>
+  <text x="116" y="138" font-size="10" fill="#5A6678">portable.exe · 105 MB</text>
+
+  <rect x="72" y="166" width="180" height="9" rx="4.5" fill="#E3E8EF"/>
+  <rect x="72" y="166" width="138" height="9" rx="4.5" fill="#3D5AA8">
+    <animate attributeName="width" values="90;160;90" dur="4s" repeatCount="indefinite"/>
+  </rect>
+
+  <rect x="72" y="196" width="180" height="34" rx="9" fill="#FFFFFF" stroke="#D9E0EA"/>
+  <rect x="84" y="206" width="16" height="14" rx="3" fill="#E8EEF7"/>
+  <text x="107" y="217" font-size="10.5" fill="#3D434B">双击运行 · 无需安装</text>
+  <text x="72" y="252" font-size="12" fill="#5A6678">不写注册表、不装驱动，</text>
+  <text x="72" y="269" font-size="12" fill="#5A6678">放到固定的目录即可。</text>
+
+  <text x="68" y="318" font-size="13.5" font-weight="600" fill="#243044">下载便携版 exe</text>
+  <text x="68" y="338" font-size="12" fill="#5A6678">双击运行，无需安装</text>
+
+  <!-- ===== card 2: wizard ===== -->
+  <rect x="336" y="36" width="236" height="330" rx="14" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="1.5"/>
+  <circle cx="360" cy="64" r="14" fill="#3D5AA8"/>
+  <text x="360" y="69" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="384" y="69" font-size="16" font-weight="600" fill="#243044">向导一键连接</text>
+
+  <rect x="364" y="100" width="180" height="118" rx="10" fill="#F6F8FB" stroke="#D9E0EA"/>
+  <text x="378" y="122" font-size="11.5" font-weight="600" fill="#243044">把网易云连上浮词</text>
+  <text x="378" y="139" font-size="9.5" fill="#5A6678">网易云还没有运行。</text>
+  <rect x="378" y="150" width="152" height="30" rx="8" fill="#3D5AA8">
+    <animate attributeName="opacity" values="1;0.78;1" dur="2.4s" repeatCount="indefinite"/>
+  </rect>
+  <text x="454" y="169" text-anchor="middle" font-size="10" fill="#FFFFFF">一键启动网易云（调试模式）</text>
+  <text x="378" y="198" font-size="9.5" fill="#5A6678">只配置一次，之后自动跟随。</text>
+
+  <circle cx="380" cy="228" r="4" fill="#28C840"/>
+  <text x="392" y="232" font-size="10.5" fill="#3D434B">已跟随 · 网易云</text>
+  <circle cx="380" cy="250" r="4" fill="#7A8AA5"/>
+  <text x="392" y="254" font-size="10.5" fill="#5A6678">未连接 · 显示演示歌词</text>
+
+  <text x="360" y="318" font-size="13.5" font-weight="600" fill="#243044">向导一键连接</text>
+  <text x="360" y="338" font-size="12" fill="#5A6678">自动带调试参数启动网易云</text>
+
+  <!-- ===== card 3: strip on the work ===== -->
+  <rect x="628" y="36" width="236" height="330" rx="14" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="1.5"/>
+  <circle cx="652" cy="64" r="14" fill="#3D5AA8"/>
+  <text x="652" y="69" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">3</text>
+  <text x="676" y="69" font-size="16" font-weight="600" fill="#243044">歌词落进工作界面</text>
+
+  <rect x="656" y="102" width="180" height="9" rx="4.5" fill="#E3E8EF"/>
+  <rect x="656" y="124" width="164" height="9" rx="4.5" fill="#E3E8EF"/>
+
+  <text x="656" y="163" font-size="15" fill="#3D434B">等午夜再唤醒我自己
+    <animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;0.42;0.5;0.92;1" dur="8s" repeatCount="indefinite"/>
+  </text>
+  <text x="656" y="163" font-size="15" fill="#3D434B">歌词落在正文之间
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.42;0.5;0.92;1" dur="8s" repeatCount="indefinite"/>
+  </text>
+
+  <rect x="656" y="174" width="176" height="18" rx="9" fill="#FFFFFF" stroke="#3D5AA8" stroke-opacity="0.45"/>
+  <text x="666" y="187" font-size="10" fill="#3D5AA8">♪ 间奏 · 8s
+    <animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.42;0.5;0.92;1" dur="8s" repeatCount="indefinite"/>
+  </text>
+  <text x="760" y="187" font-size="9.5" fill="#5A6678">间奏自动倒计时</text>
+
+  <rect x="656" y="208" width="150" height="9" rx="4.5" fill="#E3E8EF"/>
+  <rect x="656" y="230" width="172" height="9" rx="4.5" fill="#E3E8EF"/>
+  <rect x="656" y="252" width="130" height="9" rx="4.5" fill="#E3E8EF"/>
+  <text x="656" y="286" font-size="10.5" fill="#5A6678">透明处点击穿透 · 拖文字移动</text>
+
+  <text x="652" y="318" font-size="13.5" font-weight="600" fill="#243044">歌词落进工作界面</text>
+  <text x="652" y="338" font-size="12" fill="#5A6678">精确同步，间奏自动倒计时</text>
+
+  <!-- ===== card 4: make it yours ===== -->
+  <rect x="920" y="36" width="236" height="330" rx="14" fill="#FFFFFF" stroke="#D9E0EA" stroke-width="1.5"/>
+  <circle cx="944" cy="64" r="14" fill="#3D5AA8"/>
+  <text x="944" y="69" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">4</text>
+  <text x="968" y="69" font-size="16" font-weight="600" fill="#243044">调成你的样子</text>
+
+  <g>
+    <circle cx="964" cy="118" r="9" fill="#F2F4F8" stroke="#D9E0EA"/>
+    <circle cx="990" cy="118" r="9" fill="#FFD9A0"/>
+    <circle cx="1016" cy="118" r="9" fill="#F6C6D0"/>
+    <circle cx="1042" cy="118" r="9" fill="#A8D8FF"/>
+    <circle cx="1068" cy="118" r="9" fill="#B8E6C8"/>
+    <circle cx="1094" cy="118" r="9" fill="#D6C6FF"/>
+  </g>
+  <text x="948" y="146" font-size="9.5" fill="#5A6678">六套风格预设 · 正文模式 / VS Code / 终端…</text>
+
+  <rect x="948" y="164" width="180" height="9" rx="4.5" fill="#E3E8EF"/>
+  <rect x="948" y="164" width="96" height="9" rx="4.5" fill="#3D5AA8"/>
+  <circle cx="1044" cy="168.5" r="8" fill="#FFFFFF" stroke="#3D5AA8" stroke-width="2">
+    <animate attributeName="cx" values="1010;1080;1010" dur="5s" repeatCount="indefinite"/>
+  </circle>
+  <text x="948" y="192" font-size="9.5" fill="#5A6678">字号 · 字重 · 底色浓度 · 光晕 · 深浅</text>
+
+  <rect x="948" y="212" width="180" height="34" rx="9" fill="#F6F8FB" stroke="#D9E0EA"/>
+  <path d="M966 224l14 10-14 10z" fill="#3D5AA8" opacity="0.85"/>
+  <text x="990" y="233" font-size="10.5" fill="#3D434B">屏幕取色针 Alt+C</text>
+
+  <rect x="948" y="258" width="84" height="20" rx="6" fill="#F6F8FB" stroke="#D9E0EA"/>
+  <text x="990" y="272" text-anchor="middle" font-size="9.5" fill="#3D434B">听歌统计</text>
+  <rect x="1044" y="258" width="84" height="20" rx="6" fill="#F6F8FB" stroke="#D9E0EA"/>
+  <text x="1086" y="272" text-anchor="middle" font-size="9.5" fill="#3D434B">今日时长角标</text>
+
+  <text x="944" y="318" font-size="13.5" font-weight="600" fill="#243044">调成你的样子</text>
+  <text x="944" y="338" font-size="12" fill="#5A6678">取色针、六套预设、滑杆连续调</text>
+
+  <!-- ===== footnote ===== -->
+  <text x="600" y="404" text-anchor="middle" font-size="15" fill="#5A6678">从下载到看到歌词，两分钟以内。网易云不在时，QQ音乐、Spotify、浏览器也能跟——走 Windows 系统媒体接口。</text>
+</svg>

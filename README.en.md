@@ -75,6 +75,10 @@ Both are real runtime screenshots: the first shows the strip with its background
 
 ## Quick Start
 
+<p align="center">
+  <img src="assets/steps.svg" alt="Four steps: download the portable exe, connect via the wizard, watch lyrics land in your work, then tune the look" width="100%">
+</p>
+
 Grab the portable exe from [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) and double-click it — no installation. Confirm three things first, or nothing will work:
 
 | Prerequisite | Detail |
@@ -148,7 +152,13 @@ The port can be changed through the `cdpPort` field in the settings file; if the
 
 ## Following Other Players (System Media Fallback)
 
-When NetEase is not connected, FloatLyric reads playback from the Windows System Media Transport Controls (SMTC) instead. See "Following Other Players (System Media Fallback)" above for how it works and its limits.
+<p align="center">
+  <img src="assets/smtc.svg" alt="NetEase connects directly via CDP while QQ Music, Spotify and browsers converge on the same strip through SMTC" width="100%">
+</p>
+
+When NetEase is not connected, FloatLyric reads the current playback from the Windows System Media Transport Controls (SMTC) instead. Any player that reports media to Windows — QQ Music, Spotify, Apple Music, browsers, PotPlayer — can drive the strip: FloatLyric searches lyrics automatically, and playback control and listening stats keep working. Once NetEase connects, FloatLyric switches back for exact timing.
+
+Two limits: progress on the fallback comes from the system timeline and is accurate to roughly 0.5 seconds; and the NetEase desktop app itself does not report media to Windows, so following NetEase still requires the debugging port (one click in the panel wizard). The panel switch "Follow other players (system media)" is on by default; turn it off if you would rather FloatLyric not read other players.
 
 ## Controls & Shortcuts
 

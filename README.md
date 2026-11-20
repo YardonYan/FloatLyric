@@ -75,6 +75,10 @@
 
 ## 快速开始
 
+<p align="center">
+  <img src="assets/steps.svg" alt="四步上手：下载便携版、向导一键连接、歌词落进工作界面、调成你的样子" width="100%">
+</p>
+
 到 [Releases](https://github.com/YardonYan/FloatLyric/releases/latest) 下载便携版 exe，双击运行，无需安装。用之前确认三件事，缺一条跑不起来：
 
 | 前提 | 说明 |
@@ -147,6 +151,10 @@ CDP（Chrome DevTools Protocol）是 Chromium 内核对外提供的调试协议�
 调试端口可在设置文件的 `cdpPort` 字段调整；若客户端已用别的端口启动，两边保持一致即可。
 
 ## 跟随其他播放器（系统媒体兜底）
+
+<p align="center">
+  <img src="assets/smtc.svg" alt="网易云走 CDP 直连，QQ音乐、Spotify、浏览器走系统媒体接口，都汇聚到浮词歌词条" width="100%">
+</p>
 
 网易云没连上时，浮词会改从 Windows 系统媒体接口（SMTC）读取当前播放：任何向 Windows 报告媒体的播放器——QQ音乐、Spotify、Apple Music、浏览器、PotPlayer 等——都能驱动歌词条，浮词自动按歌名/歌手搜索歌词，播放控制与听歌统计照常工作。网易云连上后自动切回直连，进度更精确。
 
