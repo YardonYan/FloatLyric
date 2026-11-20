@@ -17,6 +17,11 @@ let staleTimer = null;
 let lastSwitchAt = 0;
 let lastProgressPct = -1;
 let todayMs = 0;
+let demoActive = false;
+let demoStart = 0;
+let demoIdx = -1;
+let interludeOn = false;
+let lastInterludeSec = -1;
 
 function updateStatsBadge() {
   const el = $('statsBadge');
@@ -102,9 +107,8 @@ function positionNow() {
   return p + offsetMs / 1000;
 }
 
-function lineAt(t) {
-  const L = lyrics.lines;
-  if (!L.length) return -1;
+function lineAt(L, t) {
+  if (!L || !L.length) return -1;
   let lo = 0, hi = L.length - 1, ans = -1;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
@@ -137,8 +141,7 @@ function fit() {
   queueHotZones();
 }
 
-function renderLine(i, animate) {
-  const L = lyrics.lines;
+function renderLine(L, i, animate) {
   const cur = i >= 0 ? L[i] : null;
   const text = cur ? cur.text : '';
   const tr = cfg.showTranslation && cur && cur.tr ? cur.tr : '';
@@ -183,6 +186,70 @@ function setIdle(msg) {
   queueHotZones();
 }
 
+// --- 演示模式 -------------------------------------------------------------
+// While the strip cannot see NetEase it has nothing real to show. A short
+// looping script keeps the strip alive (and doubles as a feature tour) instead
+// of a bare 等待网易云播放. Any real state from the main process stops it.
+const DEMO_LINES = [
+  { t: 0, text: '这里会显示网易云正在播放的歌词', tr: '演示模式 · 连接后自动跟随真实播放' },
+  { t: 7, text: '拖动这行文字，可以把歌词条挪到屏幕任意位置' },
+  { t: 14, text: '' },
+  { t: 22, text: '间奏时会像刚才那样，安静地提示下一句还有多久' },
+  { t: 29, text: '颜色、字号、光晕，都能在控制面板里连续调节' },
+  { t: 36, text: '现在打开面板，一键把网易云连上吧' },
+  { t: 43, text: '' },
+  { t: 47, text: '记得回来听歌' }
+];
+const DEMO_TOTAL = 53;
+
+function startDemo() {
+  demoActive = true;
+  demoStart = performance.now();
+  demoIdx = -1;
+}
+
+function stopDemo() {
+  if (!demoActive) return;
+  demoActive = false;
+  demoIdx = -1;
+  document.body.classList.remove('is-demo');
+  clearInterlude();
+}
+
+// --- 间奏提示 ---------------------------------------------------------------
+// Long gaps are where a desktop-lyrics strip looks broken: it either hangs on
+// the last sung line or sits blank. Show a quiet countdown to the next vocal
+// line instead. Two thresholds: 4s once the strip would otherwise be empty,
+// 8s before taking a still-displayed line away.
+function updateInterlude(L, i, t) {
+  let n = Math.max(i, -1) + 1;
+  while (n < L.length && !L[n].text) n++;
+  if (n >= L.length) { clearInterlude(); return; }
+  const cur = i >= 0 ? L[i] : null;
+  const gap = L[n].t - t;
+  const candidate = gap > 4 && (i === -1 || !cur.text || gap > 8);
+  if (!candidate) { clearInterlude(); return; }
+  if (!interludeOn) {
+    interludeOn = true;
+    document.body.classList.add('is-interlude');
+    queueHotZones();
+  }
+  const s = Math.ceil(gap);
+  if (s !== lastInterludeSec) {
+    lastInterludeSec = s;
+    $('interludeText').textContent = i === -1 ? `♪ ${s}s` : `♪ 间奏 · ${s}s`;
+  }
+}
+
+function clearInterlude() {
+  lastInterludeSec = -1;
+  if (!interludeOn) return;
+  interludeOn = false;
+  document.body.classList.remove('is-interlude');
+  $('interludeText').textContent = '';
+  queueHotZones();
+}
+
 // Idle states do not need 60fps: pause the lyric clock to a few frames a
 // second, and stop entirely while the window is hidden.
 const IDLE_FRAME_MS = 400;
@@ -212,9 +279,28 @@ function tick() {
   frameRaf = null;
   let delay = 0;
   if (!net || !net.ok) {
-    if (!document.body.classList.contains('is-idle')) setIdle('等待网易云播放');
-    delay = IDLE_FRAME_MS;
+    if (cfg.demoEnabled) {
+      // Demo mode: an idle strip earns nothing; a looping script shows what
+      // the strip does and quietly walks the new user through setup.
+      document.body.classList.remove('is-idle');
+      document.body.classList.add('is-demo');
+      if (!demoActive) startDemo();
+      const dt = ((performance.now() - demoStart) / 1000) % DEMO_TOTAL;
+      const di = lineAt(DEMO_LINES, dt);
+      if (di !== demoIdx) {
+        demoIdx = di;
+        renderLine(DEMO_LINES, di, true);
+      }
+      updateInterlude(DEMO_LINES, di, dt);
+      delay = PAUSED_FRAME_MS;
+    } else {
+      stopDemo();
+      clearInterlude();
+      if (!document.body.classList.contains('is-idle')) setIdle('等待网易云播放');
+      delay = IDLE_FRAME_MS;
+    }
   } else {
+    stopDemo();
     const t = positionNow();
     if (net.duration) {
       const pct = clamp(t / net.duration, 0, 1) * 100;
@@ -226,6 +312,7 @@ function tick() {
     }
 
     if (!lyrics.lines.length) {
+      clearInterlude();
       const msg = lyrics.source === 'loading' ? '正在找歌词…'
         : lyrics.source === 'instrumental' ? '纯音乐，请欣赏'
           : '这首歌没有歌词';
@@ -234,6 +321,7 @@ function tick() {
     } else if (stale) {
       // Waiting for the new song's lyrics; keep the last line on screen rather
       // than blanking the strip for the length of a network round-trip.
+      clearInterlude();
       delay = net.playing ? 0 : PAUSED_FRAME_MS;
     } else {
       // While the idle layer was up the lyric block was display:none, so any
@@ -241,7 +329,7 @@ function tick() {
       const wasIdle = document.body.classList.contains('is-idle');
       document.body.classList.remove('is-idle');
       if (wasIdle) fit();
-      const i = lineAt(t);
+      const i = lineAt(lyrics.lines, t);
       if (i !== idx) {
         const now = performance.now();
         // A one-line hop back right after a switch is sampling noise around the
@@ -251,9 +339,10 @@ function tick() {
           const first = idx === -1;
           idx = i;
           lastSwitchAt = now;
-          renderLine(i, !first);
+          renderLine(lyrics.lines, i, !first);
         }
       }
+      updateInterlude(lyrics.lines, i, t);
       delay = net.playing ? 0 : PAUSED_FRAME_MS;
     }
   }
@@ -265,6 +354,7 @@ function ingestState(s) {
   netAt = performance.now();
   lastProgressPct = -1;
   if (!s || !s.ok) { idx = -1; }
+  else if (demoActive) { stopDemo(); idx = -1; }
 }
 
 function ingestLyrics(r) {
@@ -272,7 +362,7 @@ function ingestLyrics(r) {
   stale = false;
   lyrics = r && Array.isArray(r.lines) ? r : { lines: [], source: 'none' };
   idx = -1;
-  renderLine(lineAt(positionNow()), false);
+  renderLine(lyrics.lines, lineAt(lyrics.lines, positionNow()), false);
 }
 
 async function init() {
@@ -312,7 +402,7 @@ async function init() {
     applyTheme();
     queueHotZones();
     updateStatsBadge();
-    if (refit) { idx = -1; renderLine(lineAt(positionNow()), false); }
+    if (refit) { idx = -1; renderLine(lyrics.lines, lineAt(lyrics.lines, positionNow()), false); }
   });
   window.fl.on.pickPreview(p => {
     previewHex = p ? p.hex : null;
@@ -343,7 +433,7 @@ async function init() {
 // cursor and toggles the window's hit-testing.
 function hotRects() {
   if (!cfg || cfg.clickThrough || cfg.locked) return [];
-  return [lineEl, trEl, $('idleText'), $('hud'), $('grip'), $('edgeLeft'), $('edgeRight')]
+  return [lineEl, trEl, $('idleText'), $('interludeText'), $('hud'), $('grip'), $('edgeLeft'), $('edgeRight')]
     .map(el => el.getBoundingClientRect())
     .filter(r => r.width > 0 && r.height > 0);
 }

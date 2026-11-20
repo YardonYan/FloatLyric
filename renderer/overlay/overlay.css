@@ -185,8 +185,17 @@ body:not(.show-ctx) .ctx { display: none; }
 
 .idle-text { pointer-events: auto; user-select: none; -webkit-app-region: drag; }
 
-body.is-idle .idle { display: flex; }
+body.is-idle #idle { display: flex; }
 body.is-idle .lyric { display: none; }
+
+/* Instrumental gaps: a quiet countdown to the next vocal line, replacing a
+   strip that would otherwise hang on the last sung line or sit empty. */
+body.is-interlude #interlude { display: flex; }
+body.is-interlude .lyric { display: none; }
+
+/* Demo lyrics run only while disconnected, so the (stale) progress bar has
+   nothing to say there. */
+body.is-demo .progress { display: none; }
 
 .idle-dot {
   width: .42em;

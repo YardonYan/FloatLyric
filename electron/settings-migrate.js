@@ -27,6 +27,8 @@ const DEFAULTS = {
   closeAction: 'tray',
   showStatsBadge: false,
   diagnostics: false,
+  wizardDone: false,
+  demoEnabled: true,
   shortcuts: {
     toggle: 'Alt+L',
     panel: 'Alt+P',

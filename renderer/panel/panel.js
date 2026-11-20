@@ -6,6 +6,7 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 let cfg = null;
 let net = null, netAt = 0;
 let bounds = null;
+let phase = 'idle';
 
 const PRESETS = ['#F2F4F8', '#FFD9A0', '#F6C6D0', '#A8D8FF', '#B8E6C8', '#D6C6FF', '#FFE066', '#FF9E8A'];
 
@@ -70,6 +71,7 @@ function syncControls() {
   $('clickThrough').checked = !!cfg.clickThrough;
   $('autoLaunch').checked = !!cfg.autoLaunch;
   $('showStatsBadge').checked = !!cfg.showStatsBadge;
+  $('demoEnabled').checked = cfg.demoEnabled !== false;
   $('diagnostics').checked = !!cfg.diagnostics;
   // 取色变化后，跟随取色的预设按钮色块同步更新。
   document.querySelectorAll('#stylePresets .style-preset').forEach((btn, i) => {
@@ -136,22 +138,71 @@ function showScHint(msg, bad) {
 
 const set = patch => window.fl.settings.set(patch).then(next => { cfg = next; syncControls(); });
 
-function setConn(phase, detail) {
+function setConn(p, detail) {
+  phase = p;
   const el = $('conn');
   el.dataset.phase = phase;
   const labels = {
     idle: '未连接', probing: '检测中…', connected: '已跟随',
     reconnecting: '重连中…', launching: '启动中…',
-    'needs-restart': '需重启网易云', 'not-running': '网易云未运行', error: '连接失败'
+    'needs-restart': '需重启网易云', 'not-running': '网易云未运行',
+    'port-busy': '调试端口被占用', error: '连接失败'
   };
   $('connText').textContent = labels[phase] || phase;
   const show = phase !== 'connected' && phase !== 'probing';
-  $('connBlock').hidden = !show;
+  // While the first-run wizard is up it owns the connection story; the plain
+  // block would just repeat it.
+  $('connBlock').hidden = !show || !cfg.wizardDone;
   $('connNote').textContent = detail || (
     phase === 'needs-restart' ? '网易云正在运行，但没有开启调试端口，浮词读不到播放进度。'
       : phase === 'not-running' ? '网易云没有运行。启动后浮词会自动开始跟随。'
+      : phase === 'port-busy' ? `端口 ${cfg.cdpPort} 被其他程序占用，浮词无法读取播放进度。关闭占用它的程序，或重启浮词后再试。`
       : phase === 'error' ? '连接出错。' : ''
   );
+}
+
+// First-run wizard: one card that walks the user to a connected state. The
+// status broadcast drives it, so the button label always matches what the next
+// click will actually do.
+function renderWizard() {
+  const wiz = $('wizard');
+  const show = !cfg.wizardDone;
+  wiz.hidden = !show;
+  if (!show) return;
+  const btn = $('wzAction');
+  const txt = $('wzText');
+  btn.disabled = false;
+  if (phase === 'connected') {
+    $('wzStep').textContent = '完成';
+    txt.textContent = '✓ 已连接，浮词正在跟随网易云播放。去挑一个喜欢的样式，然后开始听歌吧。';
+    btn.textContent = '开始使用';
+  } else if (phase === 'launching') {
+    $('wzStep').textContent = '进行中';
+    txt.textContent = '正在重启网易云并开启调试端口，通常需要几秒钟…';
+    btn.textContent = '请稍候';
+    btn.disabled = true;
+  } else if (phase === 'probing') {
+    $('wzStep').textContent = '进行中';
+    txt.textContent = '正在检测网易云…';
+    btn.textContent = '请稍候';
+    btn.disabled = true;
+  } else if (phase === 'needs-restart') {
+    $('wzStep').textContent = '第一步';
+    txt.textContent = '网易云已在运行，但还没开启调试端口，浮词读不到播放进度。点下面的按钮会自动重启网易云并带上调试参数（会先关闭当前的网易云）。';
+    btn.textContent = '一键重启网易云并开启调试';
+  } else if (phase === 'port-busy') {
+    $('wzStep').textContent = '第一步';
+    txt.textContent = `调试端口 ${cfg.cdpPort} 被另一个程序占用了。关闭占用它的程序后再试，或重启浮词。`;
+    btn.textContent = '重新检测';
+  } else if (phase === 'not-running') {
+    $('wzStep').textContent = '第一步';
+    txt.textContent = '网易云还没有运行。点下面的按钮，浮词会以调试模式启动它——只需这一次，之后浮词会自动跟随每一首歌。';
+    btn.textContent = '一键启动网易云（调试模式）';
+  } else {
+    $('wzStep').textContent = '第一步';
+    txt.textContent = '先把网易云连上浮词，歌词条才会开始显示歌词。';
+    btn.textContent = '重新检测';
+  }
 }
 
 function fmtDurCn(ms) {
@@ -270,16 +321,18 @@ async function init() {
   await refreshBounds();
 
   $('ver').textContent = 'v' + await window.fl.app.version();
-  setConn((await window.fl.ncm.status()).phase);
+  const st0 = await window.fl.ncm.status();
+  setConn(st0.phase, st0.detail);
+  renderWizard();
   const st = await window.fl.ncm.state();
   if (st) ingestState(st);
   const ly = await window.fl.lyrics.current();
   if (ly) showSource(ly);
 
   window.fl.on.ncmState(ingestState);
-  window.fl.on.ncmStatus(s => setConn(s.phase, s.detail));
+  window.fl.on.ncmStatus(s => { setConn(s.phase, s.detail); renderWizard(); });
   window.fl.on.lyricsData(showSource);
-  window.fl.on.settings(next => { cfg = next; syncControls(); });
+  window.fl.on.settings(next => { cfg = next; syncControls(); renderWizard(); });
   window.fl.on.pickEnded(() => refreshBounds());
   window.fl.on.statsToday(d => updateTodayBar(d));
   // Pull on the same 30s cadence as the stats window so the bar always matches it.
@@ -352,6 +405,19 @@ async function init() {
   $('btnLaunch').onclick = async () => { setConn('launching'); await window.fl.ncm.launch(); };
   $('btnReconnect').onclick = async () => { setConn('probing'); await window.fl.ncm.reconnect(); };
 
+  $('wzAction').onclick = async () => {
+    if (phase === 'connected') {
+      await window.fl.settings.set({ wizardDone: true });
+    } else if (phase === 'needs-restart' || phase === 'not-running') {
+      setConn('launching');
+      await window.fl.ncm.launch();
+    } else {
+      setConn('probing');
+      await window.fl.ncm.reconnect();
+    }
+  };
+  $('wzSkip').onclick = () => window.fl.settings.set({ wizardDone: true });
+
   $('btnPrev').onclick = () => window.fl.ncm.control('prev');
   $('btnNext').onclick = () => window.fl.ncm.control('next');
   $('btnToggle').onclick = () => window.fl.ncm.control('toggle');
@@ -371,7 +437,7 @@ async function init() {
   $('fontFamily').onchange = e => set({ fontFamily: e.target.value });
   $('fontWeight').onchange = e => set({ fontWeight: +e.target.value });
 
-  for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch'], ['showStatsBadge', 'showStatsBadge'], ['diagnostics', 'diagnostics']]) {
+  for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch'], ['showStatsBadge', 'showStatsBadge'], ['demoEnabled', 'demoEnabled'], ['diagnostics', 'diagnostics']]) {
     $(id).onchange = e => set({ [key]: e.target.checked });
   }
 

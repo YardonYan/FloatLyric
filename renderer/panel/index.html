@@ -58,6 +58,19 @@
       <span class="tb-top" id="tbTop">最常听：—</span>
     </section>
 
+    <section class="block wizard" id="wizard" hidden>
+      <div class="block-head">
+        <h2>把网易云连上浮词</h2>
+        <span class="head-val" id="wzStep">第一步</span>
+      </div>
+      <p class="note" id="wzText"></p>
+      <div class="row-btns">
+        <button class="btn solid" id="wzAction">一键启动</button>
+        <button class="btn ghost" id="wzSkip">跳过</button>
+      </div>
+      <p class="fine">浮词通过网易云的本机调试端口读取播放进度，端口只监听 127.0.0.1。配置一次即可，之后浮词会自动跟随。</p>
+    </section>
+
     <section class="block" id="connBlock" hidden>
       <div class="block-head"><h2>连接网易云</h2></div>
       <p class="note" id="connNote"></p>
@@ -163,6 +176,7 @@
         <label class="tg"><input type="checkbox" id="clickThrough"><span class="track"></span><span class="tg-label">鼠标穿透</span></label>
         <label class="tg"><input type="checkbox" id="autoLaunch"><span class="track"></span><span class="tg-label">开机自启</span></label>
         <label class="tg"><input type="checkbox" id="showStatsBadge"><span class="track"></span><span class="tg-label">歌词条显示今日时长</span></label>
+        <label class="tg"><input type="checkbox" id="demoEnabled"><span class="track"></span><span class="tg-label">未连接时显示演示歌词</span></label>
         <label class="tg"><input type="checkbox" id="diagnostics"><span class="track"></span><span class="tg-label">诊断日志</span></label>
       </div>
     </section>

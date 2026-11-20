@@ -5,7 +5,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 const settings = require('./settings');
-const { NcmBridge, isNcmRunning } = require('./ncm');
+const { NcmBridge, isNcmRunning, isPortOpen } = require('./ncm');
 const { fetchLyrics, parseLrc, clean, neteaseSearch, neteaseLyric } = require('./lyrics');
 const { putLyric, touchLyric } = require('./lyric-cache');
 const eyedropper = require('./eyedropper');
@@ -37,7 +37,7 @@ let statsTimer = null;
 let statsWin = null;
 
 // Phases where nothing is in flight and a probe is worth trying again.
-const AUTO_PHASES = new Set(['idle', 'not-running', 'needs-restart', 'error']);
+const AUTO_PHASES = new Set(['idle', 'not-running', 'needs-restart', 'port-busy', 'error']);
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {
@@ -141,17 +141,27 @@ async function tryConnect() {
     if (ok) {
       ncmStatus = { phase: 'connected', detail: '' };
     } else {
-      const running = await isNcmRunning();
-      lastProcessCheck = Date.now();
-      ncmStatus = {
-        phase: running ? 'needs-restart' : 'not-running',
-        detail: running ? '网易云已在运行，但未开启调试端口' : '网易云未运行'
-      };
+      ncmStatus = await diagnoseNcm();
     }
   } finally {
     connecting = false;
     broadcast('ncm:status', ncmStatus);
   }
+}
+
+// Classify exactly why the strip cannot follow playback, so the panel (and the
+// first-run wizard) can offer the one action that fixes it instead of a generic
+// "未连接". Order matters: process first, then who owns the port.
+async function diagnoseNcm() {
+  const running = await isNcmRunning();
+  lastProcessCheck = Date.now();
+  if (running) {
+    return { phase: 'needs-restart', detail: '网易云已在运行，但未开启调试端口' };
+  }
+  if (await isPortOpen(settings.get().cdpPort)) {
+    return { phase: 'port-busy', detail: `端口 ${settings.get().cdpPort} 被其他程序占用` };
+  }
+  return { phase: 'not-running', detail: '网易云未运行' };
 }
 
 // The client is often started after the overlay. Keep a cheap probe running so
@@ -222,11 +232,7 @@ async function autoRetry() {
     }
     // Process lookup spawns PowerShell-free tasklist each time; keep it rare.
     if (Date.now() - lastProcessCheck < 15000) return;
-    lastProcessCheck = Date.now();
-    const running = await isNcmRunning();
-    const next = running
-      ? { phase: 'needs-restart', detail: '网易云已在运行，但未开启调试端口' }
-      : { phase: 'not-running', detail: '网易云未运行' };
+    const next = await diagnoseNcm();
     if (next.phase !== ncmStatus.phase) {
       ncmStatus = next;
       broadcast('ncm:status', next);

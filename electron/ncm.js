@@ -4,6 +4,7 @@ const { spawn, execFile } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
 const http = require('node:http');
+const net = require('node:net');
 const { EventEmitter } = require('node:events');
 
 const EXTRACT = fs.readFileSync(path.join(__dirname, 'extract.js'), 'utf8');
@@ -66,6 +67,20 @@ function isNcmRunning() {
     execFile('tasklist', ['/FI', 'IMAGENAME eq cloudmusic.exe', '/NH', '/FO', 'CSV'],
       { timeout: 8000, windowsHide: true },
       (err, stdout) => resolve(!err && /cloudmusic\.exe/i.test(String(stdout))));
+  });
+}
+
+// A TCP port can be open while /json/list answers nothing useful — that is the
+// signature of some other program squatting on the debug port. Distinguishing
+// "nobody home" from "someone else's door" is what lets the panel say the
+// right thing instead of a generic 未连接.
+function isPortOpen(port, timeout = 1200) {
+  return new Promise(resolve => {
+    const s = net.connect({ host: '127.0.0.1', port });
+    const done = ok => { s.destroy(); resolve(ok); };
+    s.setTimeout(timeout, () => done(false));
+    s.once('connect', () => done(true));
+    s.once('error', () => done(false));
   });
 }
 
@@ -289,4 +304,4 @@ class NcmBridge extends EventEmitter {
   }
 }
 
-module.exports = { NcmBridge, findExeSync, findExeFromRegistry, isNcmRunning };
+module.exports = { NcmBridge, findExeSync, findExeFromRegistry, isNcmRunning, isPortOpen };
