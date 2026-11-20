@@ -2,7 +2,7 @@
 
 <img src="assets/hero.svg" alt="FloatLyric: two appearances of the same lyric line" width="100%">
 
-**A Windows desktop lyrics overlay that follows NetEase Cloud Music. By default it is one bare line of text, sitting quietly on your working screen.**
+**A Windows desktop lyrics overlay that follows NetEase Cloud Music — or any player: QQ Music, Spotify, browsers. By default it is one bare line of text, sitting quietly on your working screen.**
 
 [**Live showcase ↗**](https://floatlyric-x7alhjqexlp.qoder.zone) — a scroll-story tour plus an interactive lyric demo; try the appearance controls without installing
 

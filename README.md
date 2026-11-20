@@ -2,7 +2,7 @@
 
 <img src="assets/hero.svg" alt="浮词：同一句歌词的两种外观" width="100%">
 
-**Windows 上的桌面悬浮歌词，跟随网易云音乐播放进度。默认只有一行裸文字，安静地落在工作界面里。**
+**Windows 上的桌面悬浮歌词：跟网易云，也跟 QQ 音乐、Spotify、浏览器——任意播放器。默认只有一行裸文字，安静地落在工作界面里。**
 
 [**在线介绍站 ↗**](https://floatlyric-x7alhjqexlp.qoder.zone) — 滚动叙事 + 可交互歌词演示，无需安装即可体验外观调节
 
