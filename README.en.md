@@ -23,7 +23,7 @@
 
 > You want to see the lyrics while working, but switching NetEase Cloud Music to the foreground is a bit loud. So let the current line stay on screen, looking much like the text around it.
 
-FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation. The default appearance is a single bare line of text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document, made for listening to music discreetly at work.
+FloatLyric is a Windows desktop lyrics overlay. It follows playback in the NetEase Cloud Music desktop client and shows the current line, with an optional translation — and when NetEase is not connected it follows any player that reports to Windows (QQ Music, Spotify, browsers) through the system media interface. The default appearance is a single bare line of text: no background, no glow, no progress bar — it reads like one extra sentence someone left in a document, made for listening to music discreetly at work.
 
 The line is left-aligned, so a longer lyric grows to the right instead of covering the content on the left, and the transparent parts of the window are click-through. When you want it clearer, colour, lightness, font size, font weight, background density and glow are all continuously adjustable from the panel; the whole strip can be dragged anywhere, locked in place, or made fully click-through.
 
@@ -57,7 +57,8 @@ Both are real runtime screenshots: the first shows the strip with its background
 
 | Capability | Detail |
 | --- | --- |
-| Playback sync | Reads client playback state every 100 ms while playing (slower when paused); switches lyrics on song change, and probes/reconnects on its own if NetEase starts later |
+| Playback sync | Prefers a direct connection to the NetEase client (a read every 100 ms while playing, slower when paused); when NetEase is not connected it follows any player through the Windows system media interface, and switches back automatically once NetEase connects |
+| System media fallback | QQ Music, Spotify, Apple Music, browsers — anything that reports media to Windows drives the strip, with automatic lyric search, playback control and listening stats; can be turned off |
 | First-run wizard | Walks you through connecting on first open: one click to launch NetEase with the debug port, or to restart it if it is already running; collapses once connected |
 | Demo mode | While disconnected the strip loops a short demo script (drag, interlude and all) so you can see what it does; real lyrics take over once connected (can be turned off) |
 | Interlude hint | During intros, instrumentals or any pause longer than 4 s the strip shows a "♪ Ns" countdown to the next vocal line instead of hanging or going blank |
@@ -79,8 +80,8 @@ Grab the portable exe from [Releases](https://github.com/YardonYan/FloatLyric/re
 | Prerequisite | Detail |
 | --- | --- |
 | Windows 10 / 11 | The main process uses PowerShell, registry lookups, the Windows task list and Windows screen capture |
-| NetEase Cloud Music desktop client | The web player, mobile apps and other clients are out of scope |
-| Debugging port available | The client needs to be started with `--remote-debugging-port=9222`; one click in the panel handles the first time, see "Connecting to NetEase Cloud Music" below |
+| NetEase Cloud Music desktop client | The web player and mobile apps are out of scope; without the debug port FloatLyric still follows other players through the system media interface |
+| Debugging port available (optional) | Following is most precise with the client started as `--remote-debugging-port=9222`; the panel wizard configures it in one click, see "Connecting to NetEase Cloud Music" below |
 
 On first launch nothing in the NetEase installation is modified; the app only tries to reach port 9222 on localhost. To run from source or package it yourself, see options 2 and 3 below.
 
@@ -122,8 +123,8 @@ Output goes to `dist/` as a single-file portable build by electron-builder. Buil
 ### When it is not a fit
 
 - macOS and Linux: the implementation depends on Windows-specific interfaces and has not been ported.
-- The NetEase web player, mobile clients, car clients, or other players such as Spotify and QQ Music.
-- Karaoke-style word-by-word filling or millisecond-accurate sync. Position is derived from the pixel ratio of the progress bar, accurate to roughly 0.1 seconds.
+- The NetEase web player, mobile clients and car clients. The NetEase desktop app does not report media to Windows, so it requires the debugging port; QQ Music, Spotify, browsers and other players that do report are already supported through the system media fallback.
+- Karaoke-style word-by-word filling or millisecond-accurate sync. Position is derived from the pixel ratio of the progress bar, accurate to roughly 0.1 seconds (about 0.5 seconds on the system-media fallback).
 - Managed environments that forbid launching the client with debugging flags. Check your local policy first.
 
 ## Connecting to NetEase Cloud Music
@@ -144,6 +145,10 @@ On first use, one of three things happens:
 Clicking "Launch NetEase with debugging" force-terminates a running `cloudmusic.exe`, then starts it again with `--remote-debugging-port=9222`. The playlist is usually preserved and the current song restarts from the beginning. Save anything pending in the client before clicking. After that, launching NetEase normally is enough — FloatLyric probes and reconnects on its own.
 
 The port can be changed through the `cdpPort` field in the settings file; if the client was started on a different port, keep the two values in sync.
+
+## Following Other Players (System Media Fallback)
+
+When NetEase is not connected, FloatLyric reads playback from the Windows System Media Transport Controls (SMTC) instead. See "Following Other Players (System Media Fallback)" above for how it works and its limits.
 
 ## Controls & Shortcuts
 

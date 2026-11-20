@@ -48,3 +48,8 @@ test('v1.5 defaults appear for files that predate them', () => {
   assert.equal(data.wizardDone, false);
   assert.equal(data.demoEnabled, true);
 });
+
+test('v2.0 defaults appear for files that predate them', () => {
+  const data = mergeSettings({});
+  assert.equal(data.smtcFallback, true);
+});

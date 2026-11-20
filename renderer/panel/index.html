@@ -68,7 +68,7 @@
         <button class="btn solid" id="wzAction">一键启动</button>
         <button class="btn ghost" id="wzSkip">跳过</button>
       </div>
-      <p class="fine">浮词通过网易云的本机调试端口读取播放进度，端口只监听 127.0.0.1。配置一次即可，之后浮词会自动跟随。</p>
+      <p class="fine">浮词通过网易云的本机调试端口读取播放进度，端口只监听 127.0.0.1。网易云未连接时，若开启「跟随其他播放器」，QQ音乐、Spotify、浏览器等向 Windows 报告媒体的播放器也能驱动歌词条（进度精度略低，网易云桌面版自身不报告媒体，无法走这条路）。配置一次即可，之后浮词会自动跟随。</p>
     </section>
 
     <section class="block" id="connBlock" hidden>
@@ -177,6 +177,7 @@
         <label class="tg"><input type="checkbox" id="autoLaunch"><span class="track"></span><span class="tg-label">开机自启</span></label>
         <label class="tg"><input type="checkbox" id="showStatsBadge"><span class="track"></span><span class="tg-label">歌词条显示今日时长</span></label>
         <label class="tg"><input type="checkbox" id="demoEnabled"><span class="track"></span><span class="tg-label">未连接时显示演示歌词</span></label>
+        <label class="tg"><input type="checkbox" id="smtcFallback"><span class="track"></span><span class="tg-label">跟随其他播放器（系统媒体）</span></label>
         <label class="tg"><input type="checkbox" id="diagnostics"><span class="track"></span><span class="tg-label">诊断日志</span></label>
       </div>
     </section>

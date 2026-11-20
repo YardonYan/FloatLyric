@@ -6,6 +6,7 @@ const fs = require('node:fs');
 
 const settings = require('./settings');
 const { NcmBridge, isNcmRunning, isPortOpen } = require('./ncm');
+const { SmtcSource } = require('./smtc');
 const { fetchLyrics, parseLrc, clean, neteaseSearch, neteaseLyric } = require('./lyrics');
 const { putLyric, touchLyric } = require('./lyric-cache');
 const eyedropper = require('./eyedropper');
@@ -17,6 +18,7 @@ const R = (...p) => path.join(ROOT, 'renderer', ...p);
 
 let overlay = null, panel = null, picker = null, tray = null;
 let bridge = null;
+let smtc = null;
 let pickTimer = null;
 let pickActive = false;
 let pickPrevColor = null;
@@ -72,6 +74,9 @@ function boot() {
       wireBridge();
       await tryConnect();
       startAutoReconnect();
+      smtc = new SmtcSource();
+      wireSmtc();
+      if (settings.get().smtcFallback !== false) smtc.start();
       startPointerWatch();
       log('boot done', ncmStatus);
     } catch (err) {
@@ -89,6 +94,7 @@ function boot() {
     clearInterval(statsTimer);
     stats?.shutdown();
     bridge?.stop();
+    smtc?.stop();
     stopPick(false);
     globalShortcut.unregisterAll();
   });
@@ -129,6 +135,29 @@ function wireBridge() {
     loadLyrics(currentSong);
   });
   bridge.on('error', e => log('bridge error', e && e.message || e));
+}
+
+// SMTC fallback: while the NetEase debug port is not connected, any player
+// that reports media to Windows (QQ音乐, Spotify, browsers, ...) can drive
+// the strip and the stats. The CDP bridge always wins once it is connected —
+// its progress is exact and it supports transport control.
+function smtcAllowed() {
+  return settings.get().smtcFallback !== false;
+}
+
+function wireSmtc() {
+  smtc.on('state', s => {
+    if ((bridge && bridge.connected) || !smtcAllowed()) return;
+    stats && stats.onState(s);
+    broadcast('ncm:state', s);
+  });
+  smtc.on('songchange', s => {
+    if ((bridge && bridge.connected) || !smtcAllowed()) return;
+    log('smtc songchange', s.title, s.artist, s.duration);
+    stats && stats.onSongChange(s);
+    currentSong = { title: s.title, artist: s.artist, duration: s.duration, cover: '' };
+    loadLyrics(currentSong);
+  });
 }
 
 async function tryConnect() {
@@ -637,8 +666,16 @@ function registerIpc() {
   ipcMain.handle('ncm:status', () => ncmStatus);
   ipcMain.handle('ncm:reconnect', () => tryConnect());
   ipcMain.handle('ncm:launch', () => launchNcm());
-  ipcMain.handle('ncm:control', (_e, action) => bridge?.control(action));
-  ipcMain.handle('ncm:state', () => bridge?.lastState || null);
+  ipcMain.handle('ncm:control', (_e, action) => {
+    // Route transport control to whichever source is on air.
+    if (bridge && bridge.connected) return bridge.control(action);
+    if (smtc && smtc.hasSession && smtcAllowed()) return smtc.control(action);
+    return false;
+  });
+  ipcMain.handle('ncm:state', () => {
+    if (bridge && bridge.connected) return bridge.lastState || null;
+    return smtc?.lastState || bridge?.lastState || null;
+  });
 
   ipcMain.handle('lyrics:current', () => currentLyrics);
   ipcMain.handle('lyrics:refetch', async () => {
@@ -845,6 +882,16 @@ function applyLiveSettings(next, patch) {
   }
   if ('locked' in patch) overlay.setMovable(!next.locked);
   if ('diagnostics' in patch) setDiagnostics(!!next.diagnostics);
+  if ('smtcFallback' in patch) {
+    if (next.smtcFallback) {
+      smtc?.start();
+    } else {
+      smtc?.stop();
+      // Cut the strip loose right away instead of letting a stale SMTC state
+      // linger until the next poll.
+      broadcast('ncm:state', { ok: false, reason: 'smtc-disabled', src: 'smtc' });
+    }
+  }
   if ('autoLaunch' in patch) {
     // Portable builds run from a per-launch temp dir; the launcher exposes the
     // real exe path here, otherwise the login item would point at a dead dir.

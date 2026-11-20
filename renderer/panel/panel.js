@@ -7,6 +7,8 @@ let cfg = null;
 let net = null, netAt = 0;
 let bounds = null;
 let phase = 'idle';
+let lastSrc = 'ncm';
+let lastConnDetail = '';
 
 const PRESETS = ['#F2F4F8', '#FFD9A0', '#F6C6D0', '#A8D8FF', '#B8E6C8', '#D6C6FF', '#FFE066', '#FF9E8A'];
 
@@ -72,6 +74,7 @@ function syncControls() {
   $('autoLaunch').checked = !!cfg.autoLaunch;
   $('showStatsBadge').checked = !!cfg.showStatsBadge;
   $('demoEnabled').checked = cfg.demoEnabled !== false;
+  $('smtcFallback').checked = cfg.smtcFallback !== false;
   $('diagnostics').checked = !!cfg.diagnostics;
   // 取色变化后，跟随取色的预设按钮色块同步更新。
   document.querySelectorAll('#stylePresets .style-preset').forEach((btn, i) => {
@@ -140,20 +143,34 @@ const set = patch => window.fl.settings.set(patch).then(next => { cfg = next; sy
 
 function setConn(p, detail) {
   phase = p;
+  lastConnDetail = detail || '';
+  applyConnDisplay();
+}
+
+// One renderer for the status pill: the phase from ncm:status events decides
+// the default, but a live SMTC state overrides it — "following via the system
+// media interface" reads as healthy, not as an error state.
+function applyConnDisplay() {
   const el = $('conn');
-  el.dataset.phase = phase;
   const labels = {
     idle: '未连接', probing: '检测中…', connected: '已跟随',
     reconnecting: '重连中…', launching: '启动中…',
     'needs-restart': '需重启网易云', 'not-running': '网易云未运行',
     'port-busy': '调试端口被占用', error: '连接失败'
   };
-  $('connText').textContent = labels[phase] || phase;
-  const show = phase !== 'connected' && phase !== 'probing';
+  const smtcLive = lastSrc === 'smtc' && net && net.ok && net.src === 'smtc';
+  if (smtcLive) {
+    el.dataset.phase = 'connected';
+    $('connText').textContent = '已跟随 · 系统媒体';
+  } else {
+    el.dataset.phase = phase;
+    $('connText').textContent = labels[phase] || phase;
+  }
+  const show = !smtcLive && phase !== 'connected' && phase !== 'probing';
   // While the first-run wizard is up it owns the connection story; the plain
   // block would just repeat it.
   $('connBlock').hidden = !show || !cfg.wizardDone;
-  $('connNote').textContent = detail || (
+  $('connNote').textContent = lastConnDetail || (
     phase === 'needs-restart' ? '网易云正在运行，但没有开启调试端口，浮词读不到播放进度。'
       : phase === 'not-running' ? '网易云没有运行。启动后浮词会自动开始跟随。'
       : phase === 'port-busy' ? `端口 ${cfg.cdpPort} 被其他程序占用，浮词无法读取播放进度。关闭占用它的程序，或重启浮词后再试。`
@@ -232,6 +249,8 @@ function updateTodayBar(d) {
 
 function ingestState(s) {
   net = s; netAt = performance.now();
+  lastSrc = s && s.src === 'smtc' ? 'smtc' : 'ncm';
+  applyConnDisplay();
   if (!s || !s.ok) {
     $('songTitle').textContent = '未在播放';
     $('songArtist').textContent = '连接网易云后自动跟随';
@@ -437,7 +456,7 @@ async function init() {
   $('fontFamily').onchange = e => set({ fontFamily: e.target.value });
   $('fontWeight').onchange = e => set({ fontWeight: +e.target.value });
 
-  for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch'], ['showStatsBadge', 'showStatsBadge'], ['demoEnabled', 'demoEnabled'], ['diagnostics', 'diagnostics']]) {
+  for (const [id, key] of [['showTranslation', 'showTranslation'], ['showContext', 'showContext'], ['showProgressBar', 'showProgressBar'], ['locked', 'locked'], ['clickThrough', 'clickThrough'], ['autoLaunch', 'autoLaunch'], ['showStatsBadge', 'showStatsBadge'], ['demoEnabled', 'demoEnabled'], ['smtcFallback', 'smtcFallback'], ['diagnostics', 'diagnostics']]) {
     $(id).onchange = e => set({ [key]: e.target.checked });
   }
 

@@ -29,6 +29,7 @@ const DEFAULTS = {
   diagnostics: false,
   wizardDone: false,
   demoEnabled: true,
+  smtcFallback: true,
   shortcuts: {
     toggle: 'Alt+L',
     panel: 'Alt+P',
